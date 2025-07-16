@@ -1,1 +1,0 @@
-# yetsquire.github.io
