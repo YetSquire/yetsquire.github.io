@@ -1,8 +1,6 @@
 .viewer-wrapper {
-  margin: 40px auto;
-  width: 75%;
-  height: 600px;
-  position: relative;
-  padding-top: 10%; /* 16:9 aspect ratio */
-  border: 4px solid #ccc;
+  /* width: 100vw;
+  height: 100vh;
+  position: absolute;
+  border: 0px solid #ccc; */
 }
