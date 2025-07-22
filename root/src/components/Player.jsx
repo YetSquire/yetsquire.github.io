@@ -4,7 +4,7 @@ import { useKeyboardControls } from '@react-three/drei';
 import { useRef, useEffect} from 'react';
 import * as THREE from 'three';
 
-export function Player({ onRaise, onLower }) {
+export function Player({ onRaise, onLower, floorY }) {
     const body = useRef();
     const { camera } = useThree();
     const { rapier, world } = useRapier();
@@ -57,15 +57,24 @@ export function Player({ onRaise, onLower }) {
         body.current.setLinvel({ x: dir.x * speed, y: 0, z: dir.z * speed }, true);
     }
 
+    const targetY = floorY+1;
+    if (
+      !isNaN(body.current.translation().x) &&
+      !isNaN(body.current.translation().z) &&
+      !isNaN(targetY)
+    ) {
+      body.current.setTranslation({ x: body.current.translation().x, y: targetY, z: body.current.translation().z }, true);
+    }
     const pos = body.current.translation();
 
-    const linvel = body.current.linvel();
-    const grounded = Math.abs(linvel.y) < 0.05; // simplistic grounded check
-    if (keys.jump && grounded) {
-      body.current.applyImpulse({ x: 0, y: jumpImpulse, z: 0 }, true);
-    }
+    // const linvel = body.current.linvel();
+    // const grounded = Math.abs(linvel.y) < 0.05; // simplistic grounded check
+    // if (keys.jump && grounded) {
+    //   body.current.applyImpulse({ x: 0, y: jumpImpulse, z: 0 }, true);
+    // }
 
     // Raise/lower floor (call parent's state setter)
+    
     if (keys.raise) onRaise?.();
     if (keys.lower) onLower?.();
 
@@ -74,7 +83,7 @@ export function Player({ onRaise, onLower }) {
     const camDir = new THREE.Vector3(0, 0, 1)
         .applyAxisAngle(new THREE.Vector3(-1, 0, 0), pitch.current)
         .applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw.current);
-
+    
     camera.position.set(pos.x + offset.x, pos.y + offset.y, pos.z + offset.z);
     camera.lookAt(pos.x + camDir.x, pos.y + offset.y + camDir.y, pos.z + camDir.z);
     });
