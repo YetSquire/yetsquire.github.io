@@ -3,7 +3,8 @@ import React, { useRef } from 'react';
 import { Html } from '@react-three/drei';
 import { Container } from './Container';
 import { FloatingInteractableModel } from './FloatingInteractableModel';
-import './sci-fi-panel.css';          // ⬅️ neon styling from the previous snippet
+import ReactPlayer from 'react-player';
+import '../styling/sci-fi-panel.css'
 
 export function ExhibitRoom({
   position = [0, 0, 0],
@@ -30,15 +31,14 @@ export function ExhibitRoom({
           <h2>{title}</h2>
           <p>{description}</p>
 
-          {videoUrl && (
-            <video
-              src={videoUrl}
-              controls
-              preload="metadata"
-              playsInline
-              muted
-            />
-          )}
+          <iframe
+            width="560"
+            height="315"
+            src="https://www.youtube.com/embed/kLf05NDoUnU"
+            title="YouTube video player"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          ></iframe>
         </div>
       </Html>
 

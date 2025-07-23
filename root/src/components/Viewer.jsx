@@ -5,6 +5,7 @@ import { Environment, KeyboardControls } from '@react-three/drei';
 import { Physics, RigidBody } from '@react-three/rapier';
 import { ExhibitRoom } from './ExhibitRoom';
 import { Player } from './Player';
+import { exhibits } from '../data/exhibits';
 
 // child component that *lives inside* the Canvas
 function MovingPlatform({ targetY }) {
@@ -35,7 +36,7 @@ function MovingPlatform({ targetY }) {
       colliders="cuboid"
     >
       <mesh receiveShadow castShadow>
-        <boxGeometry args={[10, 0.2, 10]} />
+        <boxGeometry args={[100, 0.2, 10]} />
         <meshStandardMaterial color="gray" />
       </mesh>
     </RigidBody>
@@ -45,6 +46,11 @@ function MovingPlatform({ targetY }) {
 export default function Viewer() {
   const [floorY, setFloorY] = useState(-.1);
   const speed = 0.05;
+  const xDist = 10;
+  const yDist = 15;
+  const xMax = 10;
+  const roomBuffer = 50;
+  const zStart = 7;
 
   return (
     <KeyboardControls map={[
@@ -75,12 +81,12 @@ export default function Viewer() {
           />
 
           <ExhibitRoom
-            position={[0,0,6]}
+            position={[0,0,7]}
             rotation={[0,Math.PI,0]}
             containerPath="/models/container.glb"
             modelPath="/models/model.glb"
-            title="Project Beta"
-            description="…"
+            title="V^2/R"
+            description="First Place Winner of MHacks 24"
             videoURL="https://www.youtube.com/watch?v=kLf05NDoUnU"
           />
         </Physics>
