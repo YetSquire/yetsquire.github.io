@@ -1,77 +1,109 @@
-import { RigidBody, useRapier, CapsuleCollider } from '@react-three/rapier';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useKeyboardControls } from '@react-three/drei';
 import { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 
-export function Player({ onRaise, onLower, floorY }) {
-  const body = useRef();
+export function Player({
+  onRaise,
+  onLower,
+  platformX,
+  platformZ,
+  platformWidth,
+  platformDepth,
+  floorY,
+  platformRef
+}) {
+  const playerRef = useRef();
   const { camera } = useThree();
-  const { rapier, world } = useRapier();
-  const speed = 5;
+  const [, getKeys] = useKeyboardControls();
 
   const yaw = useRef(0);
   const pitch = useRef(0);
-  const dragging = useRef(false);
-
-  const [, getKeys] = useKeyboardControls();
+  const velocity = useRef(new THREE.Vector3());
+  const onPlatform = useRef(true); // Assume we start on platform
 
   useEffect(() => {
-    const handleRightClick = (e) => e.preventDefault();
-    window.addEventListener('contextmenu', handleRightClick);
-
-    const onMouseDown = () => { dragging.current = true };
-    const onMouseUp = () => { dragging.current = false };
+    const onMouseDown = () => (dragging.current = true);
+    const onMouseUp = () => (dragging.current = false);
     const onMouseMove = (e) => {
       if (!dragging.current) return;
       yaw.current -= e.movementX * 0.002;
-      pitch.current -= e.movementY * 0.002;
-      pitch.current = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch.current));
+      pitch.current = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch.current - e.movementY * 0.002));
     };
+
+    const dragging = { current: false };
 
     window.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mouseup', onMouseUp);
     window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('contextmenu', (e) => e.preventDefault());
 
     return () => {
       window.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('contextmenu', handleRightClick);
     };
   }, []);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
+    if (!playerRef.current || !platformRef.current) return;
+
+    const pos = playerRef.current.position;
+    const platPos = platformRef.current.position;
+
     const keys = getKeys();
-    const dir = new THREE.Vector3(
-      -(keys.right ? 1 : 0) + (keys.left ? 1 : 0),
-      0,
-      -(keys.backward ? 1 : 0) + (keys.forward ? 1 : 0)
+    const halfW = platformWidth / 2;
+    const halfD = platformDepth / 2;
+
+    const isOn = (
+      pos.x >= platformX - halfW && pos.x <= platformX + halfW &&
+      pos.z >= platformZ - halfD && pos.z <= platformZ + halfD &&
+      Math.abs(pos.y - (platPos.y + 1)) < 1.5
     );
 
-    const pos = body.current.translation();
+    if (isOn) {
+      // Stay locked to platform Y, allow movement on XZ
+      onPlatform.current = true;
+      const targetY = platPos.y + 1.1;
+      pos.y = THREE.MathUtils.lerp(pos.y, targetY, delta * 10);
 
-    if (dir.length() > 0) {
-      dir.normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw.current);
-      body.current.setLinvel({ x: dir.x * speed, y: body.current.linvel().y, z: dir.z * speed }, true);
+      const moveDir = new THREE.Vector3(
+        (keys.right ? 1 : 0) - (keys.left ? 1 : 0),
+        0,
+        (keys.backward ? 1 : 0) - (keys.forward ? 1 : 0)
+      ).normalize();
+
+      moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw.current);
+      moveDir.multiplyScalar(5 * delta);
+
+      playerRef.current.position.x -= moveDir.x;
+      playerRef.current.position.z -= moveDir.z;
+
+      // Q/E input
+      if (keys.raise) onRaise?.();
+      if (keys.lower) onLower?.();
+
+    } else {
+      // Apply gravity
+      onPlatform.current = false;
+      velocity.current.y -= 30 * delta; // gravity
+      pos.y += velocity.current.y * delta;
     }
 
-    if (keys.raise) onRaise?.();
-    if (keys.lower) onLower?.();
-
-    const offset = new THREE.Vector3(0, 0.75, 0);
+    // Update camera
+    const camOffset = new THREE.Vector3(0, 0.75, 0);
     const camDir = new THREE.Vector3(0, 0, 1)
       .applyAxisAngle(new THREE.Vector3(-1, 0, 0), pitch.current)
       .applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw.current);
 
-    camera.position.set(pos.x + offset.x, pos.y + offset.y, pos.z + offset.z);
-    camera.lookAt(pos.x + camDir.x, pos.y + offset.y + camDir.y, pos.z + camDir.z);
-    // console.log(pos);
+    camera.position.copy(pos).add(camOffset);
+    camera.lookAt(pos.clone().add(camDir));
   });
 
   return (
-    <RigidBody ref={body} linearDamping={10} type="dynamic" position={[0, 1, 0]}>
-      <CapsuleCollider args={[0.5, 1]} />
-    </RigidBody>
+    <mesh ref={playerRef}>
+      <capsuleGeometry args={[0.5, 1, 8, 16]} />
+      <meshStandardMaterial color="white" />
+    </mesh>
   );
 }

@@ -1,32 +1,19 @@
-// MovingPlatform.jsx
-import React, { useRef } from 'react';
-import { RigidBody, useBeforePhysicsStep } from '@react-three/rapier';
+import { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
 
-export function MovingPlatform({ y }) {
-  const ref = useRef();
-  const yRef = useRef(y);
-  yRef.current = y;
-
-  // This runs just before world.step(), so the platform moves in-sync
-  useBeforePhysicsStep(() => {
-    const body = ref.current;
-    if (!body) return;
-    body.wakeUp();  // ensure it’s active
-    body.setNextKinematicTranslation({ x: 0, y: yRef.current, z: 0 });
+export function MovingPlatform({ floorY, platformX = 0, platformZ = 0, platformRef }) {
+  useFrame((_, delta) => {
+    if (!platformRef.current) return;
+    const currentY = platformRef.current.position.y;
+    const lerpedY = THREE.MathUtils.lerp(currentY, floorY, delta * 5);
+    platformRef.current.position.set(platformX, lerpedY, platformZ);
   });
 
   return (
-    <RigidBody
-      ref={ref}
-      type="kinematicPositionBased"
-      gravityScale={0}
-      colliders="cuboid"
-      lockRotations
-    >
-      <mesh receiveShadow>
-        <boxGeometry args={[10, 0.2, 10]} />
-        <meshStandardMaterial color="gray" />
-      </mesh>
-    </RigidBody>
+    <mesh ref={platformRef} receiveShadow castShadow>
+      <boxGeometry args={[100, 1, 10]} />
+      <meshStandardMaterial color="gray" />
+    </mesh>
   );
 }
