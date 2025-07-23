@@ -44,6 +44,7 @@ function MovingPlatform({ targetY }) {
 
 export default function Viewer() {
   const [floorY, setFloorY] = useState(-.1);
+  const speed = 0.05;
 
   return (
     <KeyboardControls map={[
@@ -63,13 +64,13 @@ export default function Viewer() {
         <directionalLight position={[10,10,10]} intensity={1.2}/>
         <Environment preset="sunset"/>
 
-        <Physics gravity={[0,-50,0]}>
+        <Physics gravity={[0,-30,0]}>
           {/* now hooks live inside Canvas */}
           <MovingPlatform targetY={floorY} />
 
           <Player
-            onRaise={() => setFloorY(y => y + 0.05)}
-            onLower={() => setFloorY(y => y - 0.05)}
+            onRaise={() => setFloorY(y => y + speed)}
+            onLower={() => setFloorY(y => y - speed)}
             floorY={floorY}
           />
 

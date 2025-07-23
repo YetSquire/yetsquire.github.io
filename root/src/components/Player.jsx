@@ -66,6 +66,7 @@ export function Player({ onRaise, onLower, floorY }) {
 
     camera.position.set(pos.x + offset.x, pos.y + offset.y, pos.z + offset.z);
     camera.lookAt(pos.x + camDir.x, pos.y + offset.y + camDir.y, pos.z + camDir.z);
+    // console.log(pos);
   });
 
   return (
