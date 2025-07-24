@@ -23,8 +23,12 @@ export function Player({
   const onPlatform = useRef(true); // Assume we start on platform
 
   useEffect(() => {
-    const onMouseDown = () => (dragging.current = true);
-    const onMouseUp = () => (dragging.current = false);
+    const onMouseDown = (e) => (
+      (e.button === 2) ? dragging.current = true : null
+    );
+    const onMouseUp = (e) => (
+      (e.button === 2) ? dragging.current = false : null
+    );
     const onMouseMove = (e) => {
       if (!dragging.current) return;
       yaw.current -= e.movementX * 0.002;

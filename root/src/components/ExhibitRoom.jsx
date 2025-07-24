@@ -4,7 +4,8 @@ import { Html } from '@react-three/drei';
 import { Container } from './Container';
 import { FloatingInteractableModel } from './FloatingInteractableModel';
 import ReactPlayer from 'react-player';
-import '../styling/sci-fi-panel.css'
+import '../styling/sci-fi-panel.css';
+import { MyIFrame } from './MyIFrame';
 
 export function ExhibitRoom({
   position = [0, 0, 0],
@@ -24,22 +25,29 @@ export function ExhibitRoom({
         occlude="blending"
         transform
         distanceFactor={3}
-        position={[2, 1, 0]}
+        position={[4, 1, 0]}
         center
       >
         <div className="sci-fi-panel">
           <h2>{title}</h2>
-          <p>{description}</p>
+          <p style={{
+            width: '100%',
+            height: '120px',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            paddingRight: '10px',
+            fontSize: '14px',
+            lineHeight: '1.5',
+            scrollbarWidth: 'thin',           // for Firefox
+          }}>
+            {description}
+          </p>
 
-          <iframe
-            width="560"
-            height="315"
-            src="https://www.youtube.com/embed/kLf05NDoUnU"
-            title="YouTube video player"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          ></iframe>
+          <div style={{ width: '500px' }}>
+            <MyIFrame videoId="https://www.youtube.com/embed/kLf05NDoUnU" />
+          </div>
         </div>
+        
       </Html>
 
       {/* -- 3-D exhibit */}
