@@ -15,6 +15,6 @@ We utilized Unity, Blender, and Github to complete this project. A Github reposi
 For distribution of work, a team member worked on evaluation of the circuit, a team member worked on the interactivity with the circuit board as well as overall integration, and a team member worked on 3d modeling and auxiliary implementations.
 
 Check out https://devpost.com/software/v-r for more details!`,
-    videoURL:      'https://www.youtube.com/watch?v=kLf05NDoUnU',
+    videoUrl:      'https://www.youtube.com/watch?v=kLf05NDoUnU',
   }
 ]

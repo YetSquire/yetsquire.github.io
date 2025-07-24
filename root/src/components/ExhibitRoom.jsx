@@ -16,7 +16,7 @@ export function ExhibitRoom({
   description,
   videoUrl,
 }) {
-  const ref = useRef();               // no <THREE.Group> generic in JS
+  const ref = useRef();
 
   return (
     <group position={position} rotation={rotation}>
@@ -44,7 +44,7 @@ export function ExhibitRoom({
           </p>
 
           <div style={{ width: '500px' }}>
-            <MyIFrame videoId="https://www.youtube.com/embed/kLf05NDoUnU" />
+            <MyIFrame videoId={videoUrl} />
           </div>
         </div>
         

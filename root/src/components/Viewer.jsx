@@ -12,7 +12,7 @@ function renderExhibitRooms() {
   const zDist = 15;
   const yAdjust = 7;
   const xNum = 10;
-  const buffer = 10;
+  const buffer = 1;
 
   for (let i = 0; i < buffer; i++) {
     const exhibit = exhibits[i % exhibits.length]; // wrap around or repeat
@@ -25,7 +25,6 @@ function renderExhibitRooms() {
       zIndex * zDist,
       yAdjust,
     ];
-
     rooms.push(
       <ExhibitRoom
         key={i}
@@ -35,7 +34,7 @@ function renderExhibitRooms() {
         modelPath={exhibit?.modelPath}
         title={exhibit?.title}
         description={exhibit?.description}
-        videoURL={exhibit?.videoURL}
+        videoUrl={exhibit?.videoUrl}
       />
     );
   }
@@ -75,15 +74,6 @@ export default function Viewer() {
           platformRef={platformRef}
         />
         {renderExhibitRooms()}
-        {/* <ExhibitRoom
-          position={[0, 0, 7]}
-          rotation={[0, Math.PI, 0]}
-          containerPath="/models/container.glb"
-          modelPath="/models/model.glb"
-          title="V^2/R"
-          description="First Place Winner of MHacks 24"
-          videoURL="https://www.youtube.com/watch?v=kLf05NDoUnU"
-        /> */}
       </Canvas>
     </KeyboardControls>
   );

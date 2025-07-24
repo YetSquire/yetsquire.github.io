@@ -6,7 +6,7 @@ export function MyIFrame({ videoId}) {
   const [playerReady, setPlayerReady] = useState(false);
 
   function extractYouTubeId(url) {
-        return url.split('/embed/')[1];
+        return url.split('v=')[1];
     }
   useEffect(() => {
     if (window.YT && window.YT.Player) {
@@ -21,6 +21,7 @@ export function MyIFrame({ videoId}) {
 
   // Called when API is ready
   const onYouTubeIframeAPIReady = () => {
+    console.log(videoId);
     if (playerRef.current || !containerRef.current) return;
     playerRef.current = new window.YT.Player(containerRef.current, {
       height: '100%',
