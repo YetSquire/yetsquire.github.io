@@ -1,45 +1,6 @@
 /* Import a techno font (optional) */
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
 
-/* 1️⃣  Main card */
-.sci-fi-panel {
-  font-family: 'Orbitron', sans-serif;
-  color: #00e4ff;
-  background: rgba(15, 20, 30, 0.82);
-  padding: 18px 26px;
-  border: 2px solid #00e4ff;
-  border-radius: 14px;
-  box-shadow:
-    0 0 10px 2px #00e4ff,
-    inset 0 0 12px 2px #008aff;
-  backdrop-filter: blur(6px);
-  pointer-events: auto;          /* enable clicks if you add buttons */
-  max-width: 320px;
-}
-
-/* 2️⃣  Title */
-.sci-fi-panel h2 {
-  margin: 0 0 10px;
-  font-size: 1.25rem;
-  text-shadow: 0 0 6px #00e4ff;
-  letter-spacing: 0.05em;
-}
-
-/* 3️⃣  Body text */
-.sci-fi-panel p {
-  margin: 0 0 14px;
-  font-size: 0.85rem;
-  line-height: 1.35;
-}
-
-/* 4️⃣  Video frame */
-.sci-fi-panel video {
-  width: 100%;
-  border-radius: 8px;
-  box-shadow: 0 0 8px #00e4ff;
-  outline: none;
-}
-
 .panel h2 {
   margin: 0 0 10px;
   /* your existing styles */
@@ -60,3 +21,78 @@
   height: 100%;
   border: none;
 }
+
+.hologram-panel {
+  background: rgba(0, 40, 80, 0.7); /* dark blue, semi-transparent */
+  color: #00ffff;                  /* cyan glow text */
+  font-family: 'Orbitron', sans-serif;
+  padding: 1em;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 255, 255, 0.3);
+
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.2),
+              0 0 30px rgba(0, 200, 255, 0.1);
+  text-shadow: 0 0 2px #0ff, 0 0 4px #0ff;
+
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(2px);
+  position: relative;
+  z-index: 0;
+  max-width: 380px;
+}
+
+/* Animated horizontal shimmer lines */
+.hologram-panel::before {
+  content: '';
+  position: absolute;
+  top: -150%;
+  left: 0;
+  width: 100%;
+  height: 400%;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 255, 255, 0.04),
+    rgba(0, 255, 255, 0.04) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  animation: shimmer-horizontal 3s linear infinite;
+  z-index: 1;
+  pointer-events: none;
+}
+
+
+@keyframes shimmer-horizontal {
+  0%   { top: -150%; }
+  100% { top: 0%; }
+}
+
+
+.hologram-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 45%,
+    rgba(0, 255, 255, 0.2) 50%,
+    transparent 55%
+  );
+  mix-blend-mode: screen;
+  opacity: 0;
+  animation: glitch-flicker 6s infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes glitch-flicker {
+  0%, 100%   { opacity: 0; transform: none; }
+  35%        { opacity: 0.3; transform: skewX(3deg); }
+  37%        { opacity: 0.2; transform: skewX(-2deg); }
+  39%        { opacity: 0.25; transform: translateX(-2px); }
+  40%        { opacity: 0; transform: none; }
+  60%        { opacity: 0.2; transform: scaleY(1.03); }
+  62%        { opacity: 0.3; transform: translateY(1.5px); }
+}
+

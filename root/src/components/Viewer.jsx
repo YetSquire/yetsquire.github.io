@@ -5,46 +5,50 @@ import { ExhibitRoom } from './ExhibitRoom';
 import { Player } from './Player';
 import { MovingPlatform } from './MovingPlatform';
 import { exhibits } from '../data/exhibits';
+import { Physics } from '@react-three/rapier';
 
-function renderExhibitRooms() {
-  const rooms = [];
-  const xDist = 10;
-  const zDist = 15;
-  const yAdjust = 7;
-  const xNum = 10;
-  const buffer = 1;
+function renderExhibitRooms(scrollY = 0) {
+  const rooms   = [];
+  const COLS    = 5;     // x-direction columns
+  const X_START = -5;    // left-most room
+  const X_STEP  = 5;
+  const Y_STEP  = 7;     // vertical distance between rows
+  const Z_POS   = 7;
 
-  for (let i = 0; i < buffer; i++) {
-    const exhibit = exhibits[i % exhibits.length]; // wrap around or repeat
+  exhibits.forEach((exhibit, i) => {
+    const col = i % COLS;
+    const row = Math.floor(i / COLS);
 
-    const xIndex = i % xNum;
-    const zIndex = Math.floor(i / xNum);
-
-    const position = [
-      xIndex * xDist,
-      zIndex * zDist,
-      yAdjust,
-    ];
     rooms.push(
       <ExhibitRoom
         key={i}
-        position={position}
+        position={[
+          X_START + col * X_STEP,
+          row * Y_STEP + scrollY,     // ← shifted by scrollY
+          Z_POS
+        ]}
         rotation={[0, Math.PI, 0]}
-        containerPath={exhibit?.containerPath}
-        modelPath={exhibit?.modelPath}
-        title={exhibit?.title}
-        description={exhibit?.description}
-        videoUrl={exhibit?.videoUrl}
+        containerPath={exhibit.containerPath}
+        modelPath={exhibit.modelPath}
+        title={exhibit.title}
+        description={exhibit.description}
+        videoUrl={exhibit.videoUrl}
       />
     );
-  }
+  });
+
+
+  // handle buffer above
+
+
+  // handle buffer below
 
   return rooms;
 }
 
+
 export default function Viewer() {
   const [floorY, setFloorY] = useState(-0.1);
-  const platformRef = useRef();
 
   return (
     <KeyboardControls map={[
@@ -61,19 +65,16 @@ export default function Viewer() {
         <directionalLight position={[10, 10, 10]} intensity={1.2} />
         <Environment preset="sunset" />
 
-        <MovingPlatform floorY={floorY} platformRef={platformRef} />
+        <Physics gravity={[0,-50,0]}>
+          <MovingPlatform/>
 
-        <Player
-          onRaise={() => setFloorY((y) => y + 0.1)}
-          onLower={() => setFloorY((y) => y - 0.1)}
-          platformX={0}
-          platformZ={0}
-          platformWidth={100}
-          platformDepth={10}
-          floorY={floorY}
-          platformRef={platformRef}
-        />
-        {renderExhibitRooms()}
+          <Player
+            onRaise={() => setFloorY((y) => y + 0.1)}
+            onLower={() => setFloorY((y) => y - 0.1)}
+          />
+        </Physics>
+    
+        {renderExhibitRooms(floorY)}
       </Canvas>
     </KeyboardControls>
   );

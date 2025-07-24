@@ -16,6 +16,7 @@ export function ExhibitRoom({
   description,
   videoUrl,
 }) {
+  const isWide = title.includes("Welcome");
   const ref = useRef();
 
   return (
@@ -25,11 +26,18 @@ export function ExhibitRoom({
         occlude="blending"
         transform
         distanceFactor={3}
-        position={[4, 1, 0]}
+        position={[4, 0.5, 0]}
         center
       >
-        <div className="sci-fi-panel">
-          <h2>{title}</h2>
+        <div className="hologram-panel"
+          style={{
+              maxWidth: isWide ? '700px' : '350px',
+              width: '100%',
+          }}>
+          <h2 
+          style={{
+              textAlign: center,
+          }}>{title}</h2>
           <p style={{
             width: '100%',
             height: '120px',
@@ -50,7 +58,6 @@ export function ExhibitRoom({
         
       </Html>
 
-      {/* -- 3-D exhibit */}
       <Container ref={ref} path={containerPath} scale={0.5}>
         <FloatingInteractableModel
           path={modelPath}

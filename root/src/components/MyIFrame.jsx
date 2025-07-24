@@ -21,7 +21,6 @@ export function MyIFrame({ videoId}) {
 
   // Called when API is ready
   const onYouTubeIframeAPIReady = () => {
-    console.log(videoId);
     if (playerRef.current || !containerRef.current) return;
     playerRef.current = new window.YT.Player(containerRef.current, {
       height: '100%',
@@ -55,7 +54,7 @@ export function MyIFrame({ videoId}) {
     <div
       style={{
         position: 'relative',
-        width: '60%',
+        width: '75%',
         maxWidth: '640px',
         aspectRatio: '16 / 9',
       }}

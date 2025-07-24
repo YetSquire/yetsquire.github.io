@@ -1,17 +1,12 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useKeyboardControls } from '@react-three/drei';
 import { useRef, useEffect } from 'react';
+import { RigidBody, CapsuleCollider  } from '@react-three/rapier';
 import * as THREE from 'three';
 
 export function Player({
   onRaise,
   onLower,
-  platformX,
-  platformZ,
-  platformWidth,
-  platformDepth,
-  floorY,
-  platformRef
 }) {
   const playerRef = useRef();
   const { camera } = useThree();
@@ -19,8 +14,10 @@ export function Player({
 
   const yaw = useRef(0);
   const pitch = useRef(0);
-  const velocity = useRef(new THREE.Vector3());
-  const onPlatform = useRef(true); // Assume we start on platform
+  const MOVE_SPEED = 6;
+  const JUMP_IMPULSE = 70;
+  const Y_AXIS = new THREE.Vector3(0, 1, 0);
+  const onGround = useRef(true);
 
   useEffect(() => {
     const onMouseDown = (e) => (
@@ -50,64 +47,56 @@ export function Player({
   }, []);
 
   useFrame((_, delta) => {
-    if (!playerRef.current || !platformRef.current) return;
-
-    const pos = playerRef.current.position;
-    const platPos = platformRef.current.position;
+    const rb = playerRef.current;
+    if (!rb) return;
 
     const keys = getKeys();
-    const halfW = platformWidth / 2;
-    const halfD = platformDepth / 2;
+    const forward  = (keys.forward  ? 1 : 0) - (keys.backward ? 1 : 0);
+    const strafe   = -(keys.right    ? 1 : 0) + (keys.left     ? 1 : 0);
+    const moveDir  = new THREE.Vector3(strafe, 0, forward);
 
-    const isOn = (
-      pos.x >= platformX - halfW && pos.x <= platformX + halfW &&
-      pos.z >= platformZ - halfD && pos.z <= platformZ + halfD &&
-      Math.abs(pos.y - (platPos.y + 1)) < 1.5
-    );
-
-    if (isOn) {
-      // Stay locked to platform Y, allow movement on XZ
-      onPlatform.current = true;
-      const targetY = platPos.y + 1.1;
-      pos.y = THREE.MathUtils.lerp(pos.y, targetY, delta * 10);
-
-      const moveDir = new THREE.Vector3(
-        (keys.right ? 1 : 0) - (keys.left ? 1 : 0),
-        0,
-        (keys.backward ? 1 : 0) - (keys.forward ? 1 : 0)
-      ).normalize();
-
-      moveDir.applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw.current);
-      moveDir.multiplyScalar(5 * delta);
-
-      playerRef.current.position.x -= moveDir.x;
-      playerRef.current.position.z -= moveDir.z;
-
-      // Q/E input
-      if (keys.raise) onRaise?.();
-      if (keys.lower) onLower?.();
-
-    } else {
-      // Apply gravity
-      onPlatform.current = false;
-      velocity.current.y -= 30 * delta; // gravity
-      pos.y += velocity.current.y * delta;
+    if (moveDir.lengthSq() > 0) {
+      moveDir.normalize()
+             .applyAxisAngle(Y_AXIS, yaw.current)
+             .multiplyScalar(MOVE_SPEED);
     }
 
-    // Update camera
-    const camOffset = new THREE.Vector3(0, 0.75, 0);
+    const curVel = rb.linvel();
+    rb.setLinvel({ x: moveDir.x, y: curVel.y, z: moveDir.z }, true);
+
+    if (keys.jump && onGround.current) {
+      rb.applyImpulse({ x: 0, y: JUMP_IMPULSE, z: 0 }, true);
+    }
+    onGround.current = Math.abs(curVel.y) < 0.001; //not too efficient
+    
+    const offset = new THREE.Vector3(0, 0.75, 0);
     const camDir = new THREE.Vector3(0, 0, 1)
       .applyAxisAngle(new THREE.Vector3(-1, 0, 0), pitch.current)
       .applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw.current);
 
-    camera.position.copy(pos).add(camOffset);
-    camera.lookAt(pos.clone().add(camDir));
+    const pos = rb.translation();
+    camera.position.set(pos.x + offset.x, pos.y + offset.y, pos.z + offset.z);
+    camera.lookAt(pos.x + camDir.x, pos.y + offset.y + camDir.y, pos.z + camDir.z);
+
+    if (keys.raise) onRaise?.();
+    if (keys.lower) onLower?.();
   });
 
   return (
-    <mesh ref={playerRef}>
-      <capsuleGeometry args={[0.5, 1, 8, 16]} />
-      <meshStandardMaterial color="white" />
-    </mesh>
+    <RigidBody 
+      position={[0, 2, 0]}
+      type='dynamic'
+      colliders={false}
+      mass={1}
+      enabledRotations={[false, false, false]}
+      canSleep={false}
+      linearDamping={0.8}
+      ref={playerRef}>
+        <CapsuleCollider args={[0.5, 1]} />
+        <mesh>
+          <capsuleGeometry args={[0.5, 1, 8, 16]} />
+          <meshStandardMaterial color="white" />
+        </mesh>
+    </RigidBody>
   );
 }

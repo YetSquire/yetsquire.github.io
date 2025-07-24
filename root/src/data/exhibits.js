@@ -2,6 +2,20 @@ export const exhibits = [
   {
     containerPath: '/models/container.glb',
     modelPath:     '/models/model.glb',
+    title:         'Welcome!',
+    description:   `You've arrived at Andy Yao's portfolio website. Please refer to the menu below for directions
+    
+    WASD to move, Q and E to move the platform, Space to jump. Have fun and don't fall off :)`,
+  },
+  {
+    containerPath: '/models/container.glb',
+    modelPath:     '/models/model.glb',
+    title:         'About',
+    description:   `That's me, off to the left!`,
+  },
+  {
+    containerPath: '/models/container.glb',
+    modelPath:     '/models/model.glb',
     title:         'V²/R',
     description:   `First-place winner of MHacks 24
     What it does
