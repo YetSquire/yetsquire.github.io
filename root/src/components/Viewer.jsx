@@ -4,6 +4,44 @@ import { Environment, KeyboardControls } from '@react-three/drei';
 import { ExhibitRoom } from './ExhibitRoom';
 import { Player } from './Player';
 import { MovingPlatform } from './MovingPlatform';
+import { exhibits } from '../data/exhibits';
+
+function renderExhibitRooms() {
+  const rooms = [];
+  const xDist = 10;
+  const zDist = 15;
+  const yAdjust = 7;
+  const xNum = 10;
+  const buffer = 10;
+
+  for (let i = 0; i < buffer; i++) {
+    const exhibit = exhibits[i % exhibits.length]; // wrap around or repeat
+
+    const xIndex = i % xNum;
+    const zIndex = Math.floor(i / xNum);
+
+    const position = [
+      xIndex * xDist,
+      zIndex * zDist,
+      yAdjust,
+    ];
+
+    rooms.push(
+      <ExhibitRoom
+        key={i}
+        position={position}
+        rotation={[0, Math.PI, 0]}
+        containerPath={exhibit?.containerPath}
+        modelPath={exhibit?.modelPath}
+        title={exhibit?.title}
+        description={exhibit?.description}
+        videoURL={exhibit?.videoURL}
+      />
+    );
+  }
+
+  return rooms;
+}
 
 export default function Viewer() {
   const [floorY, setFloorY] = useState(-0.1);
@@ -36,8 +74,8 @@ export default function Viewer() {
           floorY={floorY}
           platformRef={platformRef}
         />
-
-        <ExhibitRoom
+        {renderExhibitRooms()}
+        {/* <ExhibitRoom
           position={[0, 0, 7]}
           rotation={[0, Math.PI, 0]}
           containerPath="/models/container.glb"
@@ -45,7 +83,7 @@ export default function Viewer() {
           title="V^2/R"
           description="First Place Winner of MHacks 24"
           videoURL="https://www.youtube.com/watch?v=kLf05NDoUnU"
-        />
+        /> */}
       </Canvas>
     </KeyboardControls>
   );
