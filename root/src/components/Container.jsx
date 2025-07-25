@@ -1,6 +1,7 @@
 import React, { forwardRef, useRef } from 'react';
 import { useGLTF } from '@react-three/drei';
-
+import { useMemo } from 'react';
+import { SkeletonUtils } from 'three-stdlib';
 /**
  * Renders the stasis-tank model and exposes its Group via forwardRef
  * so children (the floating object) can peek at its bounding box.
@@ -11,13 +12,19 @@ export const Container = forwardRef(({ path, scale = 1, children }, ref) => {
   const group = useRef();
   const { scene } = useGLTF(path);
 
+  const cloned = useMemo(() => {
+    // SkeletonUtils handles deep cloning of skeletons, animations, bones, etc.
+    return SkeletonUtils.clone(scene);
+  }, [scene]);
+
   // Make the inner group available to the parent through the ref
   React.useImperativeHandle(ref, () => group.current);
+  
 
   return (
     <group ref={group}>
       {/* The tank mesh */}
-      <primitive object={scene} scale={scale} />
+      <primitive object={cloned} scale={scale} />
       {/* Children (floating model) live *inside* the tank group */}
       {children}
     </group>

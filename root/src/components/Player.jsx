@@ -84,7 +84,7 @@ export function Player({
 
   return (
     <RigidBody 
-      position={[0, 2, 0]}
+      position={[0, 5, 0]}
       type='dynamic'
       colliders={false}
       mass={1}
