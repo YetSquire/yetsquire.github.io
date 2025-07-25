@@ -13,7 +13,7 @@ export function MovingPlatform({ }) {
       friction={1}
     >
       <mesh receiveShadow castShadow>
-        <boxGeometry args={[100, 1, 10]} />
+        <boxGeometry args={[60, 1, 10]} />
         <meshStandardMaterial color="gray" />
       </mesh>
     </RigidBody>

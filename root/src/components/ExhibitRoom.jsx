@@ -18,8 +18,8 @@ export function ExhibitRoom({
   if (!title && !modelPath && !containerPath) return null;
   const ref = useRef();
 
-  const panelPos = isCenter ? [0, 0.75, 0] : [4, 0.5, 0];
-  const maxWidth = isCenter ? '800px' : '350px';
+  const panelPos = isCenter ? [0, 0.75, 0] : [2.5, 0.5, 0];
+  const maxWidth = isCenter ? '800px' : '100%';
   const headingStyle = {
     textAlign: isCenter ? 'center' : 'left',
     fontSize: isCenter ? '2.5rem' : '1.25rem',
@@ -37,17 +37,25 @@ export function ExhibitRoom({
             distanceFactor={isCenter ? 4 : 3}
             position={panelPos}
             center
+            style={{ overflow: 'visible' }}
           >
-            <div className="hologram-panel" style={{ maxWidth, width: '100%' }}>
+            <div
+              className="hologram-panel"
+              style={{
+                maxWidth,
+                width: isCenter ? maxWidth : '350px',
+                boxSizing: 'border-box', 
+              }}
+            >
               {title && <h2 style={headingStyle}>{title}</h2>}
               {description && (
                 <p
                   style={{
                     width: '100%',
-                    height: '120px',
+                    height: '100%',
                     overflowY: 'auto',
                     overflowX: 'hidden',
-                    paddingRight: '10px',
+                    paddingRight: '15px',
                     fontSize: '14px',
                     lineHeight: '1.5',
                     scrollbarWidth: 'thin',
@@ -64,18 +72,9 @@ export function ExhibitRoom({
             </div>
           </Html>
 
-          {/* Panel Lighting */}
-          <pointLight
-            position={[panelPos[0], panelPos[1], panelPos[2] + 1]}
-            intensity={2.0}
-            distance={8}
-            decay={2}
-            color="#00ffff"
-          />
         </>
       )}
 
-      {/* ─────── 3D Model & Light ─────── */}
       {!isCenter && containerPath && (
         <Container ref={ref} path={containerPath} scale={0.5}>
           {modelPath && <FloatingInteractableModel path={modelPath} scale={1} />}
@@ -83,12 +82,14 @@ export function ExhibitRoom({
       )}
 
       {!isCenter && modelPath && (
-        <pointLight
-          position={[0, -0.5, 0]}
-          intensity={0.5}
-          distance={5}
-          decay={2}
-          color="#0088ff"
+        <spotLight
+            position={[0, 1.5, 1]}
+            angle={MODEL_SPOT_ANGLE}
+            intensity={MODEL_SPOT_INT}
+            distance={MODEL_SPOT_DIST}
+            penumbra={0.5}
+            color="#00aaff"
+            castShadow
         />
       )}
     </group>

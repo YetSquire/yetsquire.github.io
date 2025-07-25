@@ -20,9 +20,10 @@ exhibitSections.forEach(section => {
 });
 
 /* constants */
-const X_STEP = 5;
+const X_STEP = 8;
 const Y_STEP = 7;
 const Z_POS  = 7;
+const Y_ADJUST = 3;
 
 /* helper for side columns: [-3,-2,-1,1,2,3] */
 const SIDE_COLS = [-3, -2, -1, 1, 2, 3];
@@ -32,7 +33,7 @@ function renderExhibitRooms(scrollY = 0) {
 
   exhibitSections.forEach((section, sIndex) => {
     const { exhibits, fillBlanks, containerPath, name } = section;
-    const worldY = sIndex * Y_STEP + scrollY;          // vertical level
+    const worldY = sIndex * Y_STEP + scrollY + Y_ADJUST;          // vertical level
 
     if (sIndex === 1) {  // About level
       const aboutExhibit = exhibits[0];
@@ -142,20 +143,6 @@ export default function Viewer() {
         {/* Add a VERY low ambient so shadows aren’t pure black */}
         {/* <ambientLight intensity={0.1} color="#0a1e2f" /> */}
         <ambientLight intensity={0.6} />
-        <Points limit={500} range={[
-              [-20, -10, -20],  // min xyz
-              [ 20,  10,  20],  // max xyz
-            ]}
-          >
-            <PointMaterial
-              transparent
-              size={0.15}
-              sizeAttenuation
-              color="#88aaff"
-              depthWrite={false}
-              opacity={0.15}
-            />
-          </Points>
 
         <Physics gravity={[0,-50,0]}>
           <MovingPlatform/>
