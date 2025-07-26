@@ -8,7 +8,7 @@ import { SkeletonUtils } from 'three-stdlib';
  * 
  * LATER- HANDLE ROTATIONS ON CLICK
  */
-export const Container = forwardRef(({ path, scale = 1, children }, ref) => {
+export const Container = forwardRef(({ path, scale = 1, children, containerOrigin=[0, 0, 0] }, ref) => {
   const group = useRef();
   const { scene } = useGLTF(path);
 
@@ -24,7 +24,7 @@ export const Container = forwardRef(({ path, scale = 1, children }, ref) => {
   return (
     <group ref={group}>
       {/* The tank mesh */}
-      <primitive object={cloned} scale={scale} />
+      <primitive object={cloned} scale={scale} position={containerOrigin}/>
       {/* Children (floating model) live *inside* the tank group */}
       {children}
     </group>

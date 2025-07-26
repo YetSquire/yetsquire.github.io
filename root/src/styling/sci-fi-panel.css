@@ -44,7 +44,7 @@
 
   white-space: pre-wrap;
   word-wrap: break-word;
-  min-height: 160px;
+  min-height: 300px;
 
   box-sizing: border-box;      /* make padding count in width */
   overflow: hidden;            /* clip rounded corners cleanly */

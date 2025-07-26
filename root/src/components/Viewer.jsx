@@ -7,7 +7,11 @@ import { MovingPlatform } from './MovingPlatform';
 import { exhibitSections } from '../data/exhibits';
 import { Physics } from '@react-three/rapier';
 import * as THREE from 'three';
+import { LevelFloor } from './LevelFloor';
+import { ExteriorModel } from './ExteriorModel'; 
 
+const exteriorModel = "/models/exterior.glb";
+useGLTF.preload(exteriorModel);
 exhibitSections.forEach(section => {
   if (section.containerPath) {
     useGLTF.preload(section.containerPath);
@@ -20,24 +24,26 @@ exhibitSections.forEach(section => {
 });
 
 /* constants */
-const X_STEP = 8;
-const Y_STEP = 7;
-const Z_POS  = 7;
+const X_STEP = 10;
+const Y_STEP = 6;
+const Z_POS  = 7.5;
 const Y_ADJUST = 3;
 
 /* helper for side columns: [-3,-2,-1,1,2,3] */
 const SIDE_COLS = [-3, -2, -1, 1, 2, 3];
 
-function renderExhibitRooms(scrollY = 0) {
-  const rooms = [];
+function renderExhibits(scrollY = 0) {
+  const items = [];
 
   exhibitSections.forEach((section, sIndex) => {
     const { exhibits, fillBlanks, containerPath, name } = section;
-    const worldY = sIndex * Y_STEP + scrollY + Y_ADJUST;          // vertical level
+    const worldY = sIndex * Y_STEP + scrollY + Y_ADJUST;
+
+    items.push(<LevelFloor key={`floor-${sIndex}`} position={[0, worldY-2, Z_POS]} />);
 
     if (sIndex === 1) {  // About level
       const aboutExhibit = exhibits[0];
-      rooms.push(
+      items.push(
         <ExhibitRoom
           key="about-single"
           position={[0, worldY, Z_POS]}
@@ -54,7 +60,7 @@ function renderExhibitRooms(scrollY = 0) {
 
     if (sIndex === 0) {  // Welcome level
       const welcomeExhibit = exhibits[0];
-      rooms.push(
+      items.push(
         <ExhibitRoom
           key="welcome-big"
           isCenter                   
@@ -71,7 +77,7 @@ function renderExhibitRooms(scrollY = 0) {
     /* ───────────── Default level ───────────── */
 
     /* 1. Center title panel */
-    rooms.push(
+    items.push(
       <ExhibitRoom
         key={`lvl-${sIndex}-center`}
         isCenter
@@ -87,9 +93,7 @@ function renderExhibitRooms(scrollY = 0) {
       const exhibit = sideExhibits[idx];
 
       if (!exhibit && !fillBlanks) return;      // skip empty slot
-      console.log(containerPath)
-      console.log(exhibit?.modelPath)
-      rooms.push(
+      items.push(
         <ExhibitRoom
           key={`lvl-${sIndex}-slot-${idx}`}
           position={[col * X_STEP, worldY, Z_POS]}
@@ -104,7 +108,7 @@ function renderExhibitRooms(scrollY = 0) {
     });
   });
 
-  return rooms;
+  return items;
 }
 
 
@@ -127,7 +131,7 @@ export default function Viewer() {
         style={{ position: 'absolute', inset: 0 }}
         onCreated={({ scene }) => {
           scene.background = new THREE.Color('#050a15'); // or 'black'
-          scene.fog = new THREE.FogExp2('#050a15', 0.07);
+          scene.fog = new THREE.FogExp2('#050a15', 0.1);
         }}
         >
         {/* Dim HDRI for faint reflections — intensity 0.05-0.1 */}
@@ -136,8 +140,9 @@ export default function Viewer() {
           background={false}
           intensity={0.08}
         /> */}
+        <ExteriorModel path={exteriorModel} />
 
-        <Environment preset="night" background={false} />
+        <Environment preset="sunset"/>
 
 
         {/* Add a VERY low ambient so shadows aren’t pure black */}
@@ -153,7 +158,7 @@ export default function Viewer() {
           />
         </Physics>
     
-        {renderExhibitRooms(floorY)}
+        {renderExhibits(floorY)}
       </Canvas>
     </KeyboardControls>
   );
