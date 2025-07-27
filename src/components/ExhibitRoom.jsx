@@ -23,8 +23,8 @@ export function ExhibitRoom({
   videoUrl,
   isCenter         = false,
 
-  containerOrigin  = [-2, 1, 0],
-  modelOrigin      = [-2, 0.25, 0],
+  containerOrigin  = [-1.25, 1, 0],
+  modelOrigin      = [-1.25, 0.25, 0],
 }) {
   if (!title && !modelPath && !containerPath) return null;
 
@@ -45,13 +45,14 @@ export function ExhibitRoom({
     }
   }, []);
 
-  const panelPos = isCenter ? [0, 0.75, 0] : [2, 0.5, 0];
+  const panelPos = isCenter ? [0, 0.75, 0] : [1.25, 0.5, 0];
   const maxWidth = isCenter ? '800px' : '100%';
   const headingStyle = {
     textAlign:   isCenter ? 'center' : 'left',
     fontSize:    isCenter ? '2.5rem' : '1.25rem',
     marginBottom: '0.5rem',
   };
+  const isDeactivated = !title && !description && !videoUrl;
 
   return (
     <group position={position} rotation={rotation}>
@@ -95,46 +96,53 @@ export function ExhibitRoom({
           </mesh>
         </>
       )}
-
-      {(title || description) && (
-        <Html
-          occlude="blending"
-          transform
-          distanceFactor={isCenter ? 4 : 3}
-          position={panelPos}
-          center
-          style={{ overflow: 'visible' }}
+      
+      <Html
+        occlude="blending"
+        transform
+        distanceFactor={isCenter ? 4 : 3}
+        position={panelPos}
+        center
+        style={{ overflow: 'visible' }}
+      >
+        <div
+          className={`hologram-panel${isDeactivated ? ' deactivated' : ''}`}
+          style={{
+            maxWidth,
+            width: isCenter ? maxWidth : '350px',
+            boxSizing: 'border-box',
+          }}
         >
-          <div
-            className="hologram-panel"
-            style={{
-              maxWidth,
-              width: isCenter ? maxWidth : '350px',
-              boxSizing: 'border-box',
-            }}
-          >
-            {title && <h2 style={headingStyle}>{title}</h2>}
-            {description && (
-              <p style={{
-                width: '100%',
-                height: '100%',
-                overflowY: 'auto',
-                paddingRight: '15px',
-                fontSize: '14px',
-                lineHeight: '1.5',
-                scrollbarWidth: 'thin',
-              }}>
-                {description}
-              </p>
-            )}
-            {videoUrl && (
-              <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-                <MyIFrame videoId={videoUrl} />
-              </div>
-            )}
-          </div>
-        </Html>
-      )}
+          {isDeactivated ? (
+            // your “deactivated” content—could be a greyed‑out overlay or text
+            <div className="deactivated-message">
+            </div>
+          ) : (
+            <>
+              {title && <h2 style={headingStyle}>{title}</h2>}
+              {description && (
+                <p style={{
+                  width: '100%',
+                  height: '100%',
+                  overflowY: 'auto',
+                  paddingRight: '15px',
+                  fontSize: '14px',
+                  lineHeight: '1.5',
+                  scrollbarWidth: 'thin',
+                  textAlign: isCenter ? 'center' : 'left',
+                }}>
+                  {description}
+                </p>
+              )}
+              {videoUrl && (
+                <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+                  <MyIFrame videoId={videoUrl} />
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </Html>
     </group>
   );
 }

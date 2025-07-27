@@ -7,7 +7,9 @@ export const exhibitSections = [
       {
         title: "Welcome!",
         description: `You've arrived at Andy Yao's portfolio website.\n
-WASD to move, Q and E to move the platform, Space to jump. Have fun and don't fall off :)`,
+WASD to move, Q and E to move the platform \n
+Right-click with your mouse to move the Camera \n
+Have fun!`,
       },
     ],
   },
@@ -21,7 +23,10 @@ WASD to move, Q and E to move the platform, Space to jump. Have fun and don't fa
       {
         modelPath: "/models/model.glb",
         title: "About",
-        description: `That's me, off to the left!`,
+        description: `That's me, off to the left!\n
+I've always been amazed by what software can do, how it can make us feel\n
+In this website, you'll be able to find project I've done over the years\n
+(along with some unrelated hobbies)`,
       },
     ],
   },
