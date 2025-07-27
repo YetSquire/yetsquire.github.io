@@ -20,13 +20,9 @@ export function Player({ onRaise, onLower }) {
   const onGround     = useRef(true);
 
   /* --- audio --- */
-  const footstep = useAudio('/audio/footsteps.mp3', { loop: true, volume: 0.25 });
-  // const playJump  = useSound('/audio/jump.mp3', 0.5);
-  // const playRaise = useSound('/audio/raise.mp3', 0.35);
-  // const playLower = useSound('/audio/lower.mp3', 0.35);
+  const footstep = useAudio('/audio/footsteps.mp3', { loop: true, volume: 5 });
+  const floor = useAudio('/audio/loopedMachine.mp3', { loop: true, volume: 5 })
 
-  // throttle + edge detection refs
-  const lastMoveSound = useRef(0);
   const prevKeysRef   = useRef({ jump: false, raise: false, lower: false });
 
   useEffect(() => {
@@ -108,11 +104,14 @@ export function Player({ onRaise, onLower }) {
     // raise / lower (edge triggered to avoid spam)
     if (keys.raise) {
       onRaise?.();
-      // playRaise();
+      floor.play();
     }
-    if (keys.lower) {
+    else if (keys.lower) {
       onLower?.();
-      // playLower();
+      floor.play();
+    }
+    else {
+      floor.pause();
     }
 
     // remember previous key states

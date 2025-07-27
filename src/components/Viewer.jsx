@@ -32,11 +32,11 @@ const SLOTS_PER_LEVEL     = 8;
 const Y_STEP   = 10;
 const Y_ADJUST = 3;
 const Z_CENTER = 0;
-const WINDOW = 6;
+const WINDOW = 2;
 
 function makeEmptySection(idx) {
   return {
-    name: `Refresh to Return`,
+    name: ``,
     exhibits: [],
     fillBlanks: false,
     containerPath: null,

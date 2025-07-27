@@ -76,7 +76,7 @@ export function ExhibitRoom({
       )}
 
       {/* ─── Spotlight + Projector ─── */}
-      {!isCenter && containerPath && modelPath && (
+      {/* {!isCenter && containerPath && modelPath && (
         <>
           <spotLight
             ref={lightRef}
@@ -88,7 +88,6 @@ export function ExhibitRoom({
             color="#00ffff"
           />
 
-          {/* little sphere showing the light origin */}
           <mesh position={lightPos}>
             <sphereGeometry args={[0.1, 16, 16]} />
             <meshStandardMaterial
@@ -98,7 +97,7 @@ export function ExhibitRoom({
             />
           </mesh>
         </>
-      )}
+      )} */}
       
       <Html
         occlude="blending"

@@ -1,38 +1,88 @@
-// useAudio.js
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export function useAudio(url, { loop = false, volume = 1 } = {}) {
-  const audioRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const bufferRef = useRef(null);
+  const gainRef = useRef(null);
+  const sourceRef = useRef(null);
+
+  const startTimeRef = useRef(0);     // When the current play started
+  const pausedAtRef = useRef(0);      // Where it was paused
+  const isPlayingRef = useRef(false);
+
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    const a = new Audio(url);
-    a.loop = loop;
-    a.volume = volume;
-    audioRef.current = a;
-  }, [url, loop, volume]);
+    audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    gainRef.current = audioCtxRef.current.createGain();
+    gainRef.current.gain.value = volume;
+    gainRef.current.connect(audioCtxRef.current.destination);
+
+    fetch(url)
+      .then(res => res.arrayBuffer())
+      .then(data => audioCtxRef.current.decodeAudioData(data))
+      .then(buffer => {
+        bufferRef.current = buffer;
+        setIsReady(true);
+      });
+
+    return () => {
+      stop();
+      audioCtxRef.current.close();
+    };
+  }, [url]);
+
+  const createAndPlaySource = (offset = 0) => {
+    const source = audioCtxRef.current.createBufferSource();
+    source.buffer = bufferRef.current;
+    source.loop = loop;
+    source.connect(gainRef.current);
+    if (offset < 0) offset = 0;
+    source.start(0, offset);
+    source.onended = () => {
+      if (!loop) isPlayingRef.current = false;
+    };
+    sourceRef.current = source;
+    startTimeRef.current = audioCtxRef.current.currentTime - offset;
+    isPlayingRef.current = true;
+  };
 
   const play = () => {
-    const a = audioRef.current;
-    if (!a) return;
-    if (a.paused) a.play().catch(() => {});
+    if (!isReady || isPlayingRef.current) return;
+    createAndPlaySource(pausedAtRef.current);
   };
 
   const pause = () => {
-    const a = audioRef.current;
-    if (a && !a.paused) a.pause();
+    if (!isPlayingRef.current) return;
+
+    const currentTime = audioCtxRef.current.currentTime;
+    const gain = gainRef.current.gain;
+
+    // Fade out over 0.2 seconds
+    gain.cancelScheduledValues(currentTime);
+    gain.setValueAtTime(gain.value, currentTime);
+    gain.linearRampToValueAtTime(0, currentTime + 0.2);
+
+    // Schedule pause after fade
+    setTimeout(() => {
+      const elapsed = currentTime - startTimeRef.current;
+      pausedAtRef.current = elapsed % bufferRef.current.duration;
+      stop();
+
+      gain.setValueAtTime(volume, audioCtxRef.current.currentTime);
+    }, 200);
   };
 
   const stop = () => {
-    const a = audioRef.current;
-    if (!a) return;
-    a.pause();
-    a.currentTime = 0;
+    if (sourceRef.current) {
+      sourceRef.current.stop();
+      sourceRef.current.disconnect();
+      sourceRef.current = null;
+    }
+    isPlayingRef.current = false;
   };
 
-  const isPlaying = () => {
-    const a = audioRef.current;
-    return !!a && !a.paused;
-  };
+  const isPlaying = () => isPlayingRef.current;
 
-  return { play, pause, stop, isPlaying, audio: audioRef };
+  return { play, pause, stop, isPlaying, isReady };
 }
