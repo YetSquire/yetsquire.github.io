@@ -26,17 +26,17 @@ exhibitSections.forEach(section => {
 
 
 
-const DEFAULT_RADIUS      = 10;  // metres
-const DEFAULT_MAX_EXHIBIT = 6;   // max number of exhibits to show
-const SLOTS_PER_LEVEL     = 6;   // total slots: [sign, gap, exhibits..., gap]
+const DEFAULT_RADIUS      = 10;  
+const DEFAULT_MAX_EXHIBIT = 6;
+const SLOTS_PER_LEVEL     = 8;
 const Y_STEP   = 10;
 const Y_ADJUST = 3;
 const Z_CENTER = 0;
-const WINDOW = 2;
+const WINDOW = 6;
 
 function makeEmptySection(idx) {
   return {
-    name: `Level ${idx}`,
+    name: `Refresh to Return`,
     exhibits: [],
     fillBlanks: false,
     containerPath: null,
@@ -68,7 +68,7 @@ function renderLevel(index, worldY, section) {
   items.push(
     <LevelFloor
       key={`floor-${index}`}
-      position={[0, worldY - 2, Z_CENTER]}
+      position={[0, worldY - 2.6, Z_CENTER]}
       outerRadius={radius + 2}
       innerRadius={radius - 2}
       thickness={1}
@@ -111,12 +111,10 @@ function renderLevel(index, worldY, section) {
     return items;
   }
 
-  // ---- Normal ring layout (sign + gaps + exhibits) ----
   const totalSlots = slotsCount;
   const angleStep  = (2 * Math.PI) / totalSlots;
   let angle = Math.PI;
 
-  // consume real exhibits
   const exList = __empty ? [] : exhibits.slice(0, maxExhibits);
   let exCursor = 0;
 
@@ -127,7 +125,6 @@ function renderLevel(index, worldY, section) {
     const key  = `lvl-${index}-slot-${slot}`;
 
     if (slot === 0) {
-      // Level sign
       items.push(
         <ExhibitRoom
           key={key}
@@ -140,7 +137,6 @@ function renderLevel(index, worldY, section) {
       continue;
     }
 
-    // slot 1 & last = reserved gaps
     if (slot === 1 || slot === totalSlots - 1) continue;
 
     const ex = exList[exCursor++];
@@ -158,7 +154,6 @@ function renderLevel(index, worldY, section) {
         />
       );
     } else if (fillBlanks && !__empty) {
-      // placeholder container only
       items.push(
         <ExhibitRoom
           key={key}
@@ -168,21 +163,17 @@ function renderLevel(index, worldY, section) {
         />
       );
     }
-    // if empty level, we just skip (no placeholders)
   }
 
   return items;
 }
 
-// ---------------------------------
-// windowed renderer
-// ---------------------------------
+
 function renderExhibits(scrollY = 0) {
   const items = [];
 
   // which level index is roughly at scrollY?
   const center = -Math.round((scrollY + Y_ADJUST) / Y_STEP);
-  console.log(center);
 
   for (let i = center - WINDOW; i <= center + WINDOW; i++) {
     const section = exhibitSections[i] ?? makeEmptySection(i);

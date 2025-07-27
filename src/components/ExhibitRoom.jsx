@@ -22,7 +22,6 @@ export function ExhibitRoom({
   description,
   videoUrl,
   isCenter         = false,
-
   containerOrigin  = [-1.25, 1, 0],
   modelOrigin      = [-1.25, 0.25, 0],
 }) {
@@ -48,9 +47,13 @@ export function ExhibitRoom({
   const panelPos = isCenter ? [0, 0.75, 0] : [1.25, 0.5, 0];
   const maxWidth = isCenter ? '800px' : '100%';
   const headingStyle = {
-    textAlign:   isCenter ? 'center' : 'left',
-    fontSize:    isCenter ? '2.5rem' : '1.25rem',
-    marginBottom: '0.5rem',
+    textAlign:     isCenter ? 'center' : 'left',
+    fontSize:      isCenter ? '2.5rem' : '1.25rem',
+    marginBottom:  '0.5rem',
+    display:       !description ? 'flex' : undefined,
+    alignItems:    !description ? 'center' : undefined,
+    justifyContent: !description ? (isCenter ? 'center' : 'flex-start') : undefined,
+    height:        !description ? '100%' : undefined,
   };
   const isDeactivated = !title && !description && !videoUrl;
 
@@ -111,6 +114,10 @@ export function ExhibitRoom({
             maxWidth,
             width: isCenter ? maxWidth : '350px',
             boxSizing: 'border-box',
+            display: !description ? 'flex' : 'block',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            height: '100%',
           }}
         >
           {isDeactivated ? (
