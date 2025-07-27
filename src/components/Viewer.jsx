@@ -24,149 +24,177 @@ exhibitSections.forEach(section => {
   });
 });
 
-/* constants */
 
-/* at top of your file */
+
 const DEFAULT_RADIUS      = 10;  // metres
 const DEFAULT_MAX_EXHIBIT = 6;   // max number of exhibits to show
 const SLOTS_PER_LEVEL     = 6;   // total slots: [sign, gap, exhibits..., gap]
 const Y_STEP   = 10;
 const Y_ADJUST = 3;
 const Z_CENTER = 0;
+const WINDOW = 2;
 
+function makeEmptySection(idx) {
+  return {
+    name: `Level ${idx}`,
+    exhibits: [],
+    fillBlanks: false,
+    containerPath: null,
+    radius: DEFAULT_RADIUS,
+    maxExhibits: DEFAULT_MAX_EXHIBIT,
+    slotsCount: SLOTS_PER_LEVEL,
+    __empty: true,
+  };
+}
+
+// ---------------------------------
+// render ONE level (section or empty)
+// ---------------------------------
+function renderLevel(index, worldY, section) {
+  const {
+    exhibits,
+    fillBlanks,
+    containerPath,
+    name,
+    radius      = DEFAULT_RADIUS,
+    maxExhibits = DEFAULT_MAX_EXHIBIT,
+    slotsCount  = SLOTS_PER_LEVEL,
+    __empty     = false,
+  } = section;
+
+  const items = [];
+
+  // Ring floor
+  items.push(
+    <LevelFloor
+      key={`floor-${index}`}
+      position={[0, worldY - 2, Z_CENTER]}
+      outerRadius={radius + 2}
+      innerRadius={radius - 2}
+      thickness={1}
+      segments={64}
+      color="gray"
+    />
+  );
+
+  // --- Special real levels only if they exist ---
+  if (!__empty && index === 0 && exhibits[0]) {
+    const welcome = exhibits[0];
+    items.push(
+      <ExhibitRoom
+        key="welcome-big"
+        isCenter
+        position={[-radius, worldY, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+        modelPath={welcome?.modelPath}
+        title={`Level ${index}\n${welcome?.title}`}
+        description={welcome?.description}
+      />
+    );
+    return items;
+  }
+
+  if (!__empty && index === 1 && exhibits[0]) {
+    const about = exhibits[0];
+    items.push(
+      <ExhibitRoom
+        key="about-single"
+        position={[-radius, worldY, 0]}
+        rotation={[0, Math.PI / 2, 0]}
+        containerPath={containerPath}
+        modelPath={about?.modelPath}
+        title={`Level ${index}\n${about?.title}`}
+        description={about?.description}
+        videoUrl={about?.videoUrl}
+      />
+    );
+    return items;
+  }
+
+  // ---- Normal ring layout (sign + gaps + exhibits) ----
+  const totalSlots = slotsCount;
+  const angleStep  = (2 * Math.PI) / totalSlots;
+  let angle = Math.PI;
+
+  // consume real exhibits
+  const exList = __empty ? [] : exhibits.slice(0, maxExhibits);
+  let exCursor = 0;
+
+  for (let slot = 0; slot < totalSlots; slot++, angle += angleStep) {
+    const x    = radius * Math.cos(angle);
+    const z    = Z_CENTER + radius * Math.sin(angle);
+    const rotY = Math.atan2(x, z) + Math.PI;
+    const key  = `lvl-${index}-slot-${slot}`;
+
+    if (slot === 0) {
+      // Level sign
+      items.push(
+        <ExhibitRoom
+          key={key}
+          isCenter
+          position={[x, worldY, z]}
+          rotation={[0, rotY, 0]}
+          title={`Level ${index}\n${name}`}
+        />
+      );
+      continue;
+    }
+
+    // slot 1 & last = reserved gaps
+    if (slot === 1 || slot === totalSlots - 1) continue;
+
+    const ex = exList[exCursor++];
+    if (ex) {
+      items.push(
+        <ExhibitRoom
+          key={key}
+          position={[x, worldY, z]}
+          rotation={[0, rotY, 0]}
+          containerPath={containerPath}
+          modelPath={ex.modelPath}
+          title={ex.title}
+          description={ex.description}
+          videoUrl={ex.videoUrl}
+        />
+      );
+    } else if (fillBlanks && !__empty) {
+      // placeholder container only
+      items.push(
+        <ExhibitRoom
+          key={key}
+          position={[x, worldY, z]}
+          rotation={[0, rotY, 0]}
+          containerPath={containerPath}
+        />
+      );
+    }
+    // if empty level, we just skip (no placeholders)
+  }
+
+  return items;
+}
+
+// ---------------------------------
+// windowed renderer
+// ---------------------------------
 function renderExhibits(scrollY = 0) {
   const items = [];
 
-  exhibitSections.forEach((section, sIndex) => {
-    const {
-      exhibits,
-      fillBlanks,
-      containerPath,
-      name,
-      radius      = DEFAULT_RADIUS,
-      maxExhibits = DEFAULT_MAX_EXHIBIT,
-      slotsCount  = SLOTS_PER_LEVEL,
-    } = section;
+  // which level index is roughly at scrollY?
+  const center = -Math.round((scrollY + Y_ADJUST) / Y_STEP);
+  console.log(center);
 
-    const worldY = sIndex * Y_STEP + scrollY + Y_ADJUST;
-    const thisX    = -radius;
-    const thisZ    = 0;
-    const thisRotY = Math.PI/2;
-
-    
-    items.push(
-      <LevelFloor
-        key={`floor-${sIndex}`}
-        position={[0, worldY - 2, Z_CENTER]}   // same offset as before
-        outerRadius={radius + 2}               // a bit larger than your exhibit circle
-        innerRadius={radius - 2}               // hole just inside the exhibit ring
-        thickness={1}                          // how “tall” the ring is
-        segments={64}                          // smoothness
-        color="gray"
-      />
-    );
-
-    /* ─── Special levels ─── */
-    if (sIndex === 1) {
-      // About
-      const about = exhibits[0];
-      items.push(
-        <ExhibitRoom
-          key="about-single"
-          position={[thisX, worldY, thisZ]}
-          rotation={[0, thisRotY, 0]}
-          containerPath={containerPath}
-          modelPath={about?.modelPath}
-          title={`Level ${sIndex}\n${about?.title}`}
-          description={about?.description}
-          videoUrl={about?.videoUrl}
-        />
-      );
-      return;
-    }
-    if (sIndex === 0) {
-      // Welcome
-      const welcome = exhibits[0];
-      items.push(
-        <ExhibitRoom
-          key="welcome-big"
-          isCenter
-          position={[thisX, worldY, thisZ]}
-          rotation={[0, thisRotY, 0]}
-          modelPath={welcome?.modelPath}
-          title={`Level ${sIndex}\n${welcome?.title}`}
-          description={welcome?.description}
-        />
-      );
-      return;
-    }
-
-    /* ─── Normal circular pillar ─── */
-    // clamp how many real exhibits we place
-    const exList = exhibits.slice(0, maxExhibits);
-
-    // circle math
-    const totalSlots = slotsCount;
-    const angleStep  = (2 * Math.PI) / totalSlots;
-    // start at left-most (π)
-    let angle = Math.PI;
-
-    // we’ll consume exhibits in order from index 2..(slotsCount-2)
-    let exCursor = 0;
-
-    for (let slot = 0; slot < totalSlots; slot++, angle += angleStep) {
-      const x    = radius * Math.cos(angle);
-      const z    = Z_CENTER + radius * Math.sin(angle);
-      const rotY = Math.atan2(x, z) + Math.PI;
-      const key  = `lvl-${sIndex}-slot-${slot}`;
-
-      // slot 0: level sign
-      if (slot === 0) {
-        items.push(
-          <ExhibitRoom
-            key={key}
-            isCenter
-            position={[x, worldY, z]}
-            rotation={[0, rotY, 0]}
-            title={`Level ${sIndex}\n${name}`}
-          />
-        );
-        continue;
-      }
-      // slots 2..(last-1): exhibits or placeholders
-      const exhibit = exList[exCursor++];
-      if (exhibit) {
-        items.push(
-          <ExhibitRoom
-            key={key}
-            position={[x, worldY, z]}
-            rotation={[0, rotY, 0]}
-            containerPath={containerPath}
-            modelPath={exhibit.modelPath}
-            title={exhibit.title}
-            description={exhibit.description}
-            videoUrl={exhibit.videoUrl}
-          />
-        );
-      } else if (fillBlanks) {
-        // placeholder container only
-        items.push(
-          <ExhibitRoom
-            key={key}
-            position={[x, worldY, z]}
-            rotation={[0, rotY, 0]}
-            containerPath={containerPath}
-          />
-        );
-      }
-    }
-  });
+  for (let i = center - WINDOW; i <= center + WINDOW; i++) {
+    const section = exhibitSections[i] ?? makeEmptySection(i);
+    const worldY  = i * Y_STEP + scrollY + Y_ADJUST;
+    items.push(...renderLevel(i, worldY, section));
+  }
 
   return items;
 }
 
 export default function Viewer() {
-  const [floorY, setFloorY] = useState(-0.1);
+  const [floorY, setFloorY] = useState(0);
 
   return (
     <KeyboardControls map={[
