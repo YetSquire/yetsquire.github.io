@@ -102,7 +102,7 @@ export function ExhibitRoom({
       <Html
         occlude="blending"
         transform
-        distanceFactor={isCenter ? 4 : 3}
+        distanceFactor={isCenter ? 4 : 4}
         position={panelPos}
         center
         style={{ overflow: 'visible' }}

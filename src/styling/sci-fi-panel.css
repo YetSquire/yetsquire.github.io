@@ -23,18 +23,18 @@
 }
 
 .hologram-panel {
-  background: rgba(0, 40, 80, 0.7); /* dark blue, semi-transparent */
+  background: rgba(0, 40, 80, 0.7); 
   color: #00ffff;
   font-family: 'Orbitron', sans-serif;
   padding: 1em;
-  border-radius: 12px;
+  /* border-radius: 12px; */
   border: 10px solid rgba(0, 255, 255, 0.3);
 
   box-shadow:
     0 0 12px rgba(0, 255, 255, 0.6),
     0 0 25px rgba(0, 200, 255, 0.35),
     inset 0 0 12px rgba(0, 255, 255, 0.4);
-  text-shadow: 0 0 2px #0ff, 0 0 4px #0ff;
+  /* text-shadow: 0 0 1px #0ff, 0 0 4px #0ff; */
 
   backdrop-filter: blur(2px);
   filter: drop-shadow(0 0 8px #00ffff) drop-shadow(0 0 16px #00baff);
@@ -46,10 +46,10 @@
   word-wrap: break-word;
   min-height: 300px;
 
-  box-sizing: border-box;
+  /* box-sizing: border-box;
   overflow: hidden;          
   border-radius: 20px;
-  background-clip: padding-box;
+  background-clip: padding-box; */
 }
 
 

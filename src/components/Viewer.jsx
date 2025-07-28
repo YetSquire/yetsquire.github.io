@@ -16,15 +16,18 @@ import { exhibitSections } from '../data/exhibits';
 
 // ---------------- CONSTS ----------------
 const DEFAULT_RADIUS = 10;
-const WINDOW         = 2;
-const VISIBLE_LEVELS = WINDOW * 2 + 3; // pool size
+const WINDOW         = 1;
+const VISIBLE_LEVELS = WINDOW * 2; // pool size
 const SPEED          = 0.07;
 const SMOOTH_SPEED   = 8;
-const Y_STEP         = 10;
+const Y_STEP         = 20;
 const Y_ADJUST       = 3;
 const Z_CENTER       = 0;
 const SLOTS_PER_LEVEL= 8;
 const DEFAULT_MAX    = 6;
+
+const ABOVE_N = 6;   // tweak
+const BELOW_N = 1;
 
 const EMPTY_SECTION = Object.freeze({
   name: '',
@@ -72,7 +75,7 @@ function SmoothFloorY({ targetRef, valueRef }) {
 }
 
 // Recycles pooled levels when out of range
-function Recycler({ poolRef, floorYRef }) {
+function Recycler({ poolRef, floorYRef, centerRef, forceRerender }) {
   useFrame(() => {
     const c      = logicalCenter(floorYRef.current);
     const minIdx = c - WINDOW;
@@ -94,15 +97,21 @@ function Recycler({ poolRef, floorYRef }) {
     }
 
     if (changed) invalidate();
+    
+    if (c != centerRef.current){
+      centerRef.current = c;
+      forceRerender();
+    }
   });
   return null;
 }
 
 // Positions a level group each frame
-function LevelShell({ logicalIdx, floorYRef, children }) {
+function LevelShell({ item, floorYRef, children }) {
   const g = useRef();
   useFrame(() => {
-    if (g.current) g.current.position.y = worldYFor(logicalIdx, floorYRef.current);
+    if (g.current)
+      g.current.position.y = worldYFor(item.logicalIdx, floorYRef.current);
   });
   return <group ref={g}>{children}</group>;
 }
@@ -153,7 +162,9 @@ const Slot = React.memo(function Slot({
   );
 });
 
-function LevelContent({ logicalIdx }) {
+function LevelContent({ logicalIdx, center }) {
+  if (logicalIdx < center - BELOW_N) return null; 
+  if (logicalIdx > center + ABOVE_N) return null; 
   const section = getSection(logicalIdx);
   const {
     exhibits,
@@ -277,12 +288,16 @@ export default function Viewer() {
   const floorY       = useRef(0);
 
   const pool = useRef(null);
-  if (!pool.current) {
-    const c = logicalCenter(0);
-    pool.current = Array.from({ length: VISIBLE_LEVELS }, (_, i) => ({
-      logicalIdx: c - WINDOW + i,
-    }));
-  }
+const [tick, setTick] = React.useState(0); // force re-render
+const centerRef = useRef(logicalCenter(0));
+if (!pool.current) {
+  const c = logicalCenter(0);
+  pool.current = Array.from({ length: VISIBLE_LEVELS }, (_, i) => ({
+    id: i,                               // stable
+    logicalIdx: c - WINDOW + i,
+  }));
+}
+const forceRerender = React.useCallback(() => setTick(t => t + 1), []);
 
   return (
     <KeyboardControls
@@ -311,7 +326,7 @@ export default function Viewer() {
 
         {/* Drive floorY imperatively */}
         <SmoothFloorY targetRef={floorYTarget} valueRef={floorY} />
-        <Recycler poolRef={pool} floorYRef={floorY} />
+        <Recycler poolRef={pool} floorYRef={floorY} centerRef={centerRef} forceRerender={forceRerender} />
 
         <ExteriorModel path={exteriorModel} scale={DEFAULT_RADIUS * 1.5} />
         <Environment preset="sunset" />
@@ -327,9 +342,9 @@ export default function Viewer() {
           />
         </Physics>
 
-        {pool.current.map(({ logicalIdx }, i) => (
-          <LevelShell key={i} logicalIdx={logicalIdx} floorYRef={floorY}>
-            <LevelContent logicalIdx={logicalIdx} />
+        {pool.current.map((item) => (
+          <LevelShell key={item.id} item={item} floorYRef={floorY}>
+            <LevelContent logicalIdx={item.logicalIdx} center={centerRef.current} />
           </LevelShell>
         ))}
       </Canvas>
