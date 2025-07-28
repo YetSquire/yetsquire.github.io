@@ -44,7 +44,7 @@ export function ExhibitRoom({
     }
   }, []);
 
-  const panelPos = isCenter ? [0, 0.75, 0] : [1.25, 0.5, 0];
+  const panelPos = isCenter ? [0, 0.75, 0] : [2, 0.5, 0];
   const maxWidth = isCenter ? '800px' : '100%';
   const headingStyle = {
     textAlign:     isCenter ? 'center' : 'left',
@@ -111,7 +111,7 @@ export function ExhibitRoom({
           className={`hologram-panel${isDeactivated ? ' deactivated' : ''}`}
           style={{
             maxWidth,
-            width: isCenter ? maxWidth : '350px',
+            width: isCenter ? maxWidth : '400px',
             boxSizing: 'border-box',
             display: !description ? 'flex' : 'block',
             flexDirection: 'column',

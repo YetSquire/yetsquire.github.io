@@ -33,6 +33,14 @@ export function useAudio(url, { loop = false, volume = 1 } = {}) {
   }, [url]);
 
   const createAndPlaySource = (offset = 0) => {
+
+    if (sourceRef.current) {
+      try {
+        sourceRef.current.stop();
+      } catch {}
+      sourceRef.current.disconnect();
+      sourceRef.current = null;
+    }
     const source = audioCtxRef.current.createBufferSource();
     source.buffer = bufferRef.current;
     source.loop = loop;
@@ -48,6 +56,13 @@ export function useAudio(url, { loop = false, volume = 1 } = {}) {
   };
 
   const play = () => {
+    if (!isReady || isPlayingRef.current || sourceRef.current) return;
+    startTimeRef.current = 0;
+    pausedAtRef.current = 0;
+    createAndPlaySource(pausedAtRef.current);
+  };
+
+  const resume = () => {
     if (!isReady || isPlayingRef.current) return;
     createAndPlaySource(pausedAtRef.current);
   };
@@ -62,6 +77,7 @@ export function useAudio(url, { loop = false, volume = 1 } = {}) {
     gain.cancelScheduledValues(currentTime);
     gain.setValueAtTime(gain.value, currentTime);
     gain.linearRampToValueAtTime(0, currentTime + 0.2);
+    isPlayingRef.current = false;
 
     // Schedule pause after fade
     setTimeout(() => {
@@ -84,5 +100,5 @@ export function useAudio(url, { loop = false, volume = 1 } = {}) {
 
   const isPlaying = () => isPlayingRef.current;
 
-  return { play, pause, stop, isPlaying, isReady };
+  return { play, pause, stop, isPlaying, resume, isReady };
 }

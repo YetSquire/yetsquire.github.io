@@ -1,19 +1,22 @@
 export const exhibitSections = [
-  /* ───────────────── Welcome ───────────────── */
+  /* ------------------------------------------------------------------ */
   {
     name: "Welcome",
-    fillBlanks: false, 
+    fillBlanks: false,
     exhibits: [
       {
         title: "Welcome!",
-        description: `You've arrived at Andy Yao's portfolio website.\n
-WASD to move, Q and E to move the platform \n
-Right-click with your mouse to move the Camera \n
-Have fun!`,
+        description: `You've arrived at Andy Yao's portfolio website.
+
+WASD to move, Q / E to move the platform.
+Right-click and drag to look around.
+
+Have fun exploring!`,
       },
     ],
   },
 
+  /* ------------------------------------------------------------------ */
   {
     name: "About",
     containerPath: "/models/container.glb",
@@ -30,6 +33,7 @@ Along with some extras`,
     ],
   },
 
+  /* ------------------------------------------------------------------ */
   {
     name: "Prior Experience",
     containerPath: "/models/container.glb",
@@ -38,35 +42,43 @@ Along with some extras`,
       {
         modelPath: "/models/model.glb",
         title: "Orbit Inc.",
-        description: `First-place winner of MHacks 24…`,
-        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU",
+        description: `VR Intern (Mar – Jul 2025).\nBuilt investor-facing demos that pair Orbit’s vestibular
+biotech with an FPV-drone sim and a co-op XR horror game. Also designed an AWS stack
+(ElastiCache + Lambda + S3) and a biometric pipeline that streams >100 Hz at <30 ms latency.`,
+        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU"
       },
       {
         modelPath: "/models/model.glb",
         title: "Mixel Studios",
-        description: `First-place winner of MHacks 24…`,
-        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU",
+        description: `Full-Stack Dev (Feb 2025 – present).\nEngineered a Janus/WebRTC infrastructure that
+delivers 50+ concurrent Unity streams to hundreds of viewers, and rolled out a
+node-based XR annotation tool for live broadcast graphics.`,
+        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU"
       },
       {
         modelPath: "/models/model.glb",
-        title: "The University of Michigan",
-        description: `First-place winner of MHacks 24…`,
-        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU",
+        title: "University of Michigan",
+        description: `XR Instructional Asst. (Dec 2024 – present).\nMentorED 30+ students each term in
+EECS 440 “Extended Reality & Society,” providing office hours and remote support across projects using Unity and Unreal Engine.`,
+        videoUrl: ""
       },
       {
         modelPath: "/models/model.glb",
         title: "Sandia National Labs",
-        description: `First-place winner of MHacks 24…`,
-        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU",
+        description: `Mission Tech Intern (May 2024 – Mar 2025).\nCreated “JARVIS,” a secure Unity plugin
+powered by an LLM for voice-controlled simulation state changes; boosted function
+lookup speed 3× with Milvus VectorDB and presented at the 2024 Sandia XR Conference.`,
+        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU"
       },
       {
         modelPath: "/models/model.glb",
         title: "The Next Adventure",
-        description: `I'm always looking for new opportunities, new projects. \n
-Feel free to reach out at andyyao15@gmail.com if there's something you'd like to talk about!`
+        description: `Always looking for the next project. If you have something you'd like to show off, let’s chat at andyyao15@gmail.com`
       },
     ],
   },
+
+  /* ------------------------------------------------------------------ */
   {
     name: "Personal Projects",
     containerPath: "/models/container.glb",
@@ -74,30 +86,34 @@ Feel free to reach out at andyyao15@gmail.com if there's something you'd like to
     exhibits: [
       {
         modelPath: "/models/model.glb",
-        title: "ChemCreator",
-        description: `First-place winner of MHacks 24…`,
-        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU",
+        title: "ChemCreator VR",
+        description: `Unity VR lab that teaches Lewis structures & VSEPR theory. Demoed to 100+
+high-school students; EdTech winner at +Tech Jam and finalist in the Michigan Business Challenge.`,
+        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU"
       },
       {
         modelPath: "/models/model.glb",
         title: "Arcane Spell Language",
-        description: `First-place winner of MHacks 24…`,
-        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU",
+        description: `Multiplayer VR wizard-dueling where spells are cast with real ASL gestures.
+Built with Unity XR, Photon, and Meta Building Blocks.`,
+        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU"
       },
       {
         modelPath: "/models/model.glb",
-        title: "The Emperor and the Artist",
-        description: `This is an unfinished project`,
-        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU",
+        title: "The Emperor & the Artist",
+        description: `WIP 8thwall AR project. I just wanted to show off this model :D`,
+        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU"
       },
       {
         modelPath: "/models/model.glb",
         title: "The Infinite Portfolio",
-        description: `What you're standing in!`,
-        videoUrl: "",
+        description: `You’re standing in it — an endlessly scrolling 3D museum powered by React Three Fiber and Rapier physics.`,
+        videoUrl: ""
       },
     ],
   },
+
+  /* ------------------------------------------------------------------ */
   {
     name: "Hackathon Projects",
     containerPath: "/models/container.glb",
@@ -106,89 +122,98 @@ Feel free to reach out at andyyao15@gmail.com if there's something you'd like to
       {
         modelPath: "/models/model.glb",
         title: "V²/R",
-        description: `First-place winner of MHacks 24…`,
-        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU",
+        description: `First Place, MHacks 17.\nA VR breadboard simulator with a graph-based digital twin that lets
+students wire circuits and watch real-time current flow.`,
+        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU"
       },
       {
         modelPath: "/models/model.glb",
         title: "LABuddy",
-        description: `First-place winner of MHacks 24…`,
-        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU",
+        description: `Best in AI, SpartaHacks 10.\nAR smart-glasses assistant that recognizes lab equipment and
+dictates contextual safety tips and procedures.`,
+        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU"
       },
       {
         modelPath: "/models/model.glb",
         title: "Social Brew",
-        description: `Finalist`,
-        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU",
+        description: `Finalist, RH × SnapAR Hackathon.\n CONT.`,
+        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU"
       },
       {
         modelPath: "/models/model.glb",
         title: "VSAT",
-        description: `This is an unfinished project`,
-        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU",
+        description: `Third Place, MHacks 16\n CONT!`,
+        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU"
       },
       {
         modelPath: "/models/model.glb",
         title: "Wireless Walker",
-        description: `What you're standing in!`,
-        videoUrl: "",
+        description: `Third Place, Spartahacks 8\n CONT.`,
+        videoUrl: ""
       },
     ],
   },
+
+  /* ------------------------------------------------------------------ */
   {
-    name: "Activities and Organizations",
+    name: "Activities & Organizations",
     containerPath: "/models/container.glb",
     fillBlanks: true,
     exhibits: [
       {
         modelPath: "/models/model.glb",
         title: "Alternate Reality Initiative",
-        description: `First-place winner of MHacks 24…`,
-        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU",
+        description: `President of U-M’s XR student org. Lead 90-minute workshops on Unity &
+Unreal; partnered with Visit Detroit on an AR historic-sites tour and merged XR Midwest Hackathon into MHacks with $20 k funding.`,
+        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU"
       },
       {
         modelPath: "/models/model.glb",
-        title: "The Big City: Lost and Found in VR",
-        description: `First-place winner of MHacks 24…`,
-        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU",
+        title: "The Big City: Lost & Found in VR",
+        description: `Game-dev specialist for a 3-hour interactive stage performance. Built
+virtual-production scenes in Unreal Engine with mocap-driven animation.`,
+        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU"
       },
       {
         modelPath: "/models/model.glb",
-        title: "XR Midwest x MHacks",
-        description: `First-place winner of MHacks 24…`,
-        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU",
+        title: "XR Midwest × MHacks",
+        description: `Initiated and organized the 2025 XR track at MHacks, securing $50k in sponsorship and supporting AR/VR projects
+in a 600+ student hackathon.`,
+        videoUrl: "https://www.youtube.com/watch?v=kLf05NDoUnU"
       },
     ],
   },
+
+  /* ------------------------------------------------------------------ */
   {
-    name: "Miscellaneous Passions",
+    name: "Miscellaneous",
     containerPath: "/models/container.glb",
     fillBlanks: true,
     exhibits: [
       {
         modelPath: "/models/model.glb",
         title: "History",
-        description: `First-place winner of MHacks 24…`,
+        description: ``
       },
       {
         modelPath: "/models/model.glb",
         title: "Virtual Reality",
-        description: `First-place winner of MHacks 24…`,
+        description: ``
       },
       {
         modelPath: "/models/model.glb",
-        title: "Epistomology",
-        description: `First-place winner of MHacks 24…`,
+        title: "Epistemology",
+        description: ``
       },
       {
         modelPath: "/models/model.glb",
         title: "Game Design",
-        description: `First-place winner of MHacks 24…`,
+        description: `”`
       },
       {
         modelPath: "/models/model.glb",
         title: "Running",
-        description: `\nI like running :)\n\n Puts me in the state of mind to think about the rest of this stuff`,
+        description: `I just like running. Congrats for making it to the 'top' of the tower.`
       },
     ],
   },

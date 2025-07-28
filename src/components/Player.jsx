@@ -20,10 +20,10 @@ export function Player({ onRaise, onLower }) {
   const onGround     = useRef(true);
 
   /* --- audio --- */
-  const footstep = useAudio('/audio/footsteps.mp3', { loop: true, volume: 5 });
-  const floor = useAudio('/audio/loopedMachine.mp3', { loop: true, volume: 5 })
+  const footstep = useAudio('/audio/footsteps.mp3', { loop: true, volume: 3 });
+  const floor = useAudio('/audio/loopedMachine.mp3', { loop: true, volume: 1 })
 
-  const prevKeysRef   = useRef({ jump: false, raise: false, lower: false });
+  const prevKeysRef   = useRef({ jump: false, floor: false });
 
   useEffect(() => {
     const dragging = { current: false };
@@ -70,7 +70,7 @@ export function Player({ onRaise, onLower }) {
         .applyAxisAngle(Y_AXIS, yaw.current)
         .multiplyScalar(MOVE_SPEED);
         // THIS IS DISGUSTING, OPTIMIZE
-      footstep.play();
+      footstep.resume();
     }
     else {
       footstep.pause();
@@ -104,21 +104,26 @@ export function Player({ onRaise, onLower }) {
     // raise / lower (edge triggered to avoid spam)
     if (keys.raise) {
       onRaise?.();
-      floor.play();
+      if (!prevKeysRef.current.floor || !floor.isPlaying()){
+        floor.play();
+      }
     }
     else if (keys.lower) {
       onLower?.();
-      floor.play();
+      if (!prevKeysRef.current.floor || !floor.isPlaying()){
+        floor.play();
+      }
     }
     else {
-      floor.pause();
+      if (prevKeysRef.current.floor || !floor.isPlaying){
+        floor.pause();
+      }
     }
 
     // remember previous key states
     prevKeysRef.current = {
       jump:  keys.jump,
-      raise: keys.raise,
-      lower: keys.lower,
+      floor: keys.lower || keys.raise ,
     };
   });
 
