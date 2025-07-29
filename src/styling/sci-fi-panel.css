@@ -46,10 +46,10 @@
   word-wrap: break-word;
   min-height: 300px;
 
-  /* box-sizing: border-box;
+  box-sizing: border-box;
   overflow: hidden;          
   border-radius: 20px;
-  background-clip: padding-box; */
+  background-clip: padding-box;
 }
 
 

@@ -18,12 +18,14 @@ export function ExhibitRoom({
   rotation         = [0, 0, 0],
   containerPath,
   modelPath,
+  modelScale        = 1,
+  modelRotation   = [0, 0, 0],
   title,
   description,
   videoUrl,
   isCenter         = false,
-  containerOrigin  = [-1.25, 1, 0],
-  modelOrigin      = [-1.25, 0.25, 0],
+  containerOrigin  = [-1.5, 1, 0],
+  modelOrigin      = [-1.5, 0.25, 0],
 }) {
   if (!title && !modelPath && !containerPath) return null;
 
@@ -44,7 +46,7 @@ export function ExhibitRoom({
     }
   }, []);
 
-  const panelPos = isCenter ? [0, 0.75, 0] : [2, 0.5, 0];
+  const panelPos = isCenter ? [0, 0.75, 0] : [2, 1, 0];
   const maxWidth = isCenter ? '800px' : '100%';
   const headingStyle = {
     textAlign:     isCenter ? 'center' : 'left',
@@ -65,7 +67,7 @@ export function ExhibitRoom({
         <Container path={containerPath} scale={0.75} containerOrigin={containerOrigin}>
           {modelPath && (
             // wrap the model in a group so we can get its Object3D
-            <group ref={modelRef} position={modelOrigin}>
+            <group ref={modelRef} position={modelOrigin} rotation = {modelRotation} scale={modelScale}>
               <FloatingInteractableModel
                 path={modelPath}
                 scale={1}

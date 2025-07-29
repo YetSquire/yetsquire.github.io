@@ -17,17 +17,17 @@ import { exhibitSections } from '../data/exhibits';
 // ---------------- CONSTS ----------------
 const DEFAULT_RADIUS = 10;
 const WINDOW         = 1;
-const VISIBLE_LEVELS = WINDOW * 2; // pool size
+const VISIBLE_LEVELS = WINDOW * 2 + 1; // pool size
 const SPEED          = 0.07;
 const SMOOTH_SPEED   = 8;
-const Y_STEP         = 20;
+const Y_STEP         = 15;
 const Y_ADJUST       = 3;
 const Z_CENTER       = 0;
 const SLOTS_PER_LEVEL= 8;
 const DEFAULT_MAX    = 6;
 
 const ABOVE_N = 6;   // tweak
-const BELOW_N = 1;
+const BELOW_N = 0;
 
 const EMPTY_SECTION = Object.freeze({
   name: '',
@@ -128,6 +128,8 @@ const Slot = React.memo(function Slot({
   const z    = zCenter + radius * Math.sin(angle);
   const rotY = Math.atan2(x, z) + Math.PI;
 
+  if (slotIdx == 1 || slotIdx == SLOTS_PER_LEVEL-1) return null;
+
   if (isCenterSlot) {
     return (
       <ExhibitRoom
@@ -155,6 +157,9 @@ const Slot = React.memo(function Slot({
       rotation={[0, rotY, 0]}
       containerPath={containerPath}
       modelPath={exhibit.modelPath}
+      modelScale={exhibit.modelScale}
+      modelRotation={exhibit.modelRotation}
+      modelOrigin={exhibit.modelOrigin}
       title={exhibit.title}
       description={exhibit.description}
       videoUrl={exhibit.videoUrl}
@@ -195,6 +200,9 @@ function LevelContent({ logicalIdx, center }) {
           position={[-radius, 0, 0]}
           rotation={[0, Math.PI / 2, 0]}
           modelPath={welcome?.modelPath}
+          modelScale={welcome?.modelScale}
+          modelRotation={welcome?.modelRotation}
+          modelOrigin={welcome?.modelOrigin}
           title={`Level ${logicalIdx}\n${welcome?.title}`}
           description={welcome?.description}
         />
@@ -219,6 +227,9 @@ function LevelContent({ logicalIdx, center }) {
           rotation={[0, Math.PI / 2, 0]}
           containerPath={containerPath}
           modelPath={about?.modelPath}
+          modelScale={about?.modelScale}
+          modelRotation={about?.modelRotation}
+          modelOrigin={about?.modelOrigin}
           title={`Level ${logicalIdx}\n${about?.title}`}
           description={about?.description}
           videoUrl={about?.videoUrl}
