@@ -2,12 +2,7 @@ import { useFrame, invalidate } from '@react-three/fiber';
 import { logicalCenter } from '../utils/helpers.js';
 import { WINDOW } from '../utils/constants.js';
 
-export default function Recycler({
-  poolRef,
-  floorYRef,
-  centerRef,
-  forceRerender,
-}) {
+export default function Recycler({ poolRef, floorYRef, centerRef, forceRerender }) {
   useFrame(() => {
     const c = logicalCenter(floorYRef.current);
     const minIdx = c - WINDOW;

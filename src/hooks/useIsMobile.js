@@ -1,13 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'
 
 export const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(false);
+  const [m, setM] = useState(false)
   useEffect(() => {
-    setIsMobile(
-      /iPhone|iPad|iPod|Android|webOS|BlackBerry|Windows Phone/i.test(
-        navigator.userAgent,
-      ),
-    );
-  }, []);
-  return isMobile;
-};
+    setM(/iPhone|iPad|iPod|Android|webOS|BlackBerry|Windows Phone/i.test(navigator.userAgent))
+  }, [])
+  return m
+}
