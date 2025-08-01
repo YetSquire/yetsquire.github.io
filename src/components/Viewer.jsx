@@ -14,8 +14,8 @@ import { ExteriorModel } from './ExteriorModel';
 import { CylindricalBoundary } from './Boundary';
 import { logicalCenter } from '../utils/helpers.js';
 import { VISIBLE_LEVELS, WINDOW, SPEED, DEFAULT_RADIUS } from '../utils/constants.js';
+import { isMobile } from '../utils/utils.js';
 import { MobileControls } from './MobileControls';
-import { useIsMobile } from '../hooks/useIsMobile.js';
 
 export default function Viewer() {
   const exterior = preloadModels();
@@ -25,7 +25,7 @@ export default function Viewer() {
   const pool = useRef(null);
   const [flush, setFlush] = useState(0);
   const directionRef = useRef(null); 
-  const mobile = useIsMobile();
+  const mobile = isMobile();
 
   const centerRef = useRef(logicalCenter(0));
 

@@ -8,3 +8,7 @@ export function worldYFor(idx, scrollY) {
 export function logicalCenter(scrollY) {
   return -Math.round((scrollY + Y_ADJUST) / Y_STEP);
 }
+
+export function isMobile(){
+  return /iPhone|iPad|iPod|Android|webOS|BlackBerry|Windows Phone/i.test(navigator.userAgent);
+}
