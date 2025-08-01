@@ -3,7 +3,7 @@ import { Canvas, invalidate } from '@react-three/fiber';
 import { Preload, Environment, KeyboardControls } from '@react-three/drei';
 import { Physics } from '@react-three/rapier';
 import * as THREE from 'three';
-import { usePreloadModels } from '../preload/preloadModels.js';
+import { preloadModels } from '../preload/preloadModels.js';
 import SmoothFloorMovement from './SmoothFloorMovement.jsx';
 import Recycler from './Recycler.jsx';
 import LevelShell from './LevelShell.jsx';
@@ -16,8 +16,8 @@ import { logicalCenter } from '../utils/helpers.js';
 import { VISIBLE_LEVELS, WINDOW, SPEED, DEFAULT_RADIUS } from '../utils/constants.js';
 
 export default function Viewer() {
-  const exterior = usePreloadModels();
-
+  const exterior = preloadModels();
+  
   const floorYTarget = useRef(0);
   const floorY = useRef(0);
   const pool = useRef(null);
@@ -80,7 +80,8 @@ export default function Viewer() {
           />
         </Physics>
         {pool.current.map(item => (
-          <LevelShell key={item.id} item={item} floorYRef={floorY}>
+          
+          <LevelShell key={item.id} logicalIdx={item.logicalIdx} floorYRef={floorY}>
             <LevelContent logicalIdx={item.logicalIdx} center={centerRef.current} />
           </LevelShell>
         ))}

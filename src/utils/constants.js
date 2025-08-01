@@ -8,8 +8,8 @@ export const Y_ADJUST = 3;
 export const Z_CENTER = 0;
 export const SLOTS_PER_LEVEL = 8;
 export const DEFAULT_MAX = 6;
-export const ABOVE_N = 6;
-export const BELOW_N = 0;
+export const ABOVE_N = 3;
+export const BELOW_N = 1;
 
 export const EMPTY_SECTION = Object.freeze({
   name: '',
