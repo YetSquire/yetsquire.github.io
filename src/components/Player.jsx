@@ -1,4 +1,3 @@
-// Player.jsx
 import { useFrame, useThree } from '@react-three/fiber';
 import { useKeyboardControls } from '@react-three/drei';
 import { useRef, useEffect, useState } from 'react';
@@ -6,24 +5,23 @@ import { RigidBody, CapsuleCollider } from '@react-three/rapier';
 import { useAudio } from './UseSound';
 import * as THREE from 'three';
 
-export function Player({ onRaise, onLower }) {
+export function Player({ onRaise, onLower, directionRef, isMobile }) {
   const playerRef = useRef();
   const { camera } = useThree();
   const [, getKeys] = useKeyboardControls();
 
-  const yaw   = useRef(-Math.PI/2);
+  const yaw   = useRef(-Math.PI / 2);
   const pitch = useRef(0);
 
-  const MOVE_SPEED   = 6;
+  const MOVE_SPEED = 6;
   const JUMP_IMPULSE = 70;
-  const Y_AXIS       = new THREE.Vector3(0, 1, 0);
-  const onGround     = useRef(true);
+  const Y_AXIS = new THREE.Vector3(0, 1, 0);
+  const onGround = useRef(true);
 
-  /* --- audio --- */
   const footstep = useAudio('/audio/footsteps.mp3', { loop: true, volume: 3 });
-  const floor = useAudio('/audio/loopedMachine.mp3', { loop: true, volume: 1 })
+  const floor = useAudio('/audio/loopedMachine.mp3', { loop: true, volume: 1 });
 
-  const prevKeysRef   = useRef({ jump: false, floor: false });
+  const prevKeysRef = useRef({ jump: false, floor: false });
 
   useEffect(() => {
     const dragging = { current: false };
@@ -36,21 +34,21 @@ export function Player({ onRaise, onLower }) {
     };
     const onMouseMove = (e) => {
       if (!dragging.current) return;
-      yaw.current   -= e.movementX * 0.002;
-      pitch.current  = Math.max(
+      yaw.current -= e.movementX * 0.002;
+      pitch.current = Math.max(
         -Math.PI / 2,
         Math.min(Math.PI / 2, pitch.current - e.movementY * 0.002)
       );
     };
 
     window.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('mouseup',   onMouseUp);
+    window.addEventListener('mouseup', onMouseUp);
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('contextmenu', (e) => e.preventDefault());
 
     return () => {
       window.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('mouseup',   onMouseUp);
+      window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('mousemove', onMouseMove);
     };
   }, []);
@@ -60,34 +58,41 @@ export function Player({ onRaise, onLower }) {
     if (!rb) return;
 
     const keys = getKeys();
-    const forward = (keys.forward ? 1 : 0) - (keys.backward ? 1 : 0);
-    const strafe  = -(keys.right ? 1 : 0) + (keys.left ? 1 : 0);
-    const moveDir = new THREE.Vector3(strafe, 0, forward);
+    let moveDir = new THREE.Vector3();
+
+    if (isMobile && directionRef.current) {
+      switch (directionRef.current) {
+        case 'up':    moveDir.set(0, 0, -1); break;
+        case 'down':  moveDir.set(0, 0, 1);  break;
+        case 'left':  moveDir.set(-1, 0, 0); break;
+        case 'right': moveDir.set(1, 0, 0);  break;
+        default:      moveDir.set(0, 0, 0);  break;
+      }
+    } else {
+      const forward = (keys.forward ? 1 : 0) - (keys.backward ? 1 : 0);
+      const strafe  = -(keys.right ? 1 : 0) + (keys.left ? 1 : 0);
+      moveDir.set(strafe, 0, forward);
+    }
 
     if (moveDir.lengthSq() > 0) {
       moveDir
         .normalize()
         .applyAxisAngle(Y_AXIS, yaw.current)
         .multiplyScalar(MOVE_SPEED);
-        // THIS IS DISGUSTING, OPTIMIZE
       footstep.resume();
-    }
-    else {
+    } else {
       footstep.pause();
     }
 
     const curVel = rb.linvel();
     rb.setLinvel({ x: moveDir.x, y: curVel.y, z: moveDir.z }, true);
 
-    // jump (edge triggered)
     if (keys.jump && !prevKeysRef.current.jump && onGround.current) {
       rb.applyImpulse({ x: 0, y: JUMP_IMPULSE, z: 0 }, true);
     }
 
-    // Update ground state (cheap check)
     onGround.current = Math.abs(curVel.y) < 0.001;
 
-    // camera update
     const offset = new THREE.Vector3(0, 0.75, 0);
     const camDir = new THREE.Vector3(0, 0, 1)
       .applyAxisAngle(new THREE.Vector3(-1, 0, 0), pitch.current)
@@ -101,29 +106,26 @@ export function Player({ onRaise, onLower }) {
       pos.z + camDir.z
     );
 
-    // raise / lower (edge triggered to avoid spam)
+    // Raise/lower logic
     if (keys.raise) {
       onRaise?.();
-      if (!prevKeysRef.current.floor || !floor.isPlaying()){
+      if (!prevKeysRef.current.floor || !floor.isPlaying()) {
         floor.play();
       }
-    }
-    else if (keys.lower) {
+    } else if (keys.lower) {
       onLower?.();
-      if (!prevKeysRef.current.floor || !floor.isPlaying()){
+      if (!prevKeysRef.current.floor || !floor.isPlaying()) {
         floor.play();
       }
-    }
-    else {
-      if (prevKeysRef.current.floor || !floor.isPlaying){
+    } else {
+      if (prevKeysRef.current.floor || !floor.isPlaying) {
         floor.pause();
       }
     }
 
-    // remember previous key states
     prevKeysRef.current = {
-      jump:  keys.jump,
-      floor: keys.lower || keys.raise ,
+      jump: keys.jump,
+      floor: keys.lower || keys.raise,
     };
   });
 

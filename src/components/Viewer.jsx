@@ -14,6 +14,8 @@ import { ExteriorModel } from './ExteriorModel';
 import { CylindricalBoundary } from './Boundary';
 import { logicalCenter } from '../utils/helpers.js';
 import { VISIBLE_LEVELS, WINDOW, SPEED, DEFAULT_RADIUS } from '../utils/constants.js';
+import { MobileControls } from './MobileControls';
+import { useIsMobile } from '../hooks/useIsMobile.js';
 
 export default function Viewer() {
   const exterior = preloadModels();
@@ -22,6 +24,9 @@ export default function Viewer() {
   const floorY = useRef(0);
   const pool = useRef(null);
   const [flush, setFlush] = useState(0);
+  const directionRef = useRef(null); 
+  const mobile = useIsMobile();
+
   const centerRef = useRef(logicalCenter(0));
 
   if (!pool.current) {
@@ -69,6 +74,8 @@ export default function Viewer() {
           <MovingPlatform radius={DEFAULT_RADIUS * 0.75} />
           <CylindricalBoundary radius={DEFAULT_RADIUS * 0.75} height={10} />
           <Player
+            directionRef={directionRef}
+            isMobile={mobile}
             onRaise={() => {
               floorYTarget.current += SPEED;
               invalidate();
@@ -86,6 +93,20 @@ export default function Viewer() {
           </LevelShell>
         ))}
       </Canvas>
+
+      {mobile && (
+        <MobileControls
+          directionRef={directionRef}   
+          onRaise={() => {
+            floorYTarget.current += SPEED;
+            invalidate();
+          }}
+          onLower={() => {
+            floorYTarget.current -= SPEED;
+            invalidate();
+          }}
+        />
+      )}
     </KeyboardControls>
   );
 }
