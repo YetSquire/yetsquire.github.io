@@ -42,71 +42,75 @@ export default function Viewer() {
   useEffect(() => invalidate(), []);
 
   return (
-    <KeyboardControls
-      map={[
-        { name: 'forward', keys: ['w', 'ArrowUp'] },
-        { name: 'backward', keys: ['s', 'ArrowDown'] },
-        { name: 'left', keys: ['a', 'ArrowLeft'] },
-        { name: 'right', keys: ['d', 'ArrowRight'] },
-        { name: 'jump', keys: [' '] },
-        { name: 'raise', keys: ['q'] },
-        { name: 'lower', keys: ['e'] },
-      ]}
-    >
-      <Canvas
-        frameloop="demand"
-        dpr={[1, 1.5]}
-        gl={{ powerPreference: 'high-performance', antialias: false }}
-        camera={{ position: [0, 2, 12], rotation: [0, Math.PI / 2, 0], fov: 60 }}
-        style={{ position: 'absolute', inset: 0 }}
-        onCreated={({ scene }) => {
-          scene.background = new THREE.Color('#050a15');
-          scene.fog = new THREE.FogExp2('#050a15', 0.1);
-        }}
+    <div style={{
+      // position: 'relative',
+      // width: '100%',
+      // height: '100vh',   // or '100%' if the parent already controls height
+      // overflow: 'hidden'
+    }}>
+      <KeyboardControls
+        map={[
+          { name: 'forward', keys: ['w', 'ArrowUp'] },
+          { name: 'backward', keys: ['s', 'ArrowDown'] },
+          { name: 'left', keys: ['a', 'ArrowLeft'] },
+          { name: 'right', keys: ['d', 'ArrowRight'] },
+          { name: 'jump', keys: [' '] },
+          { name: 'raise', keys: ['q'] },
+          { name: 'lower', keys: ['e'] },
+        ]}
       >
-        <Preload all />
-        <SmoothFloorMovement targetRef={floorYTarget} valueRef={floorY} />
-        <Recycler poolRef={pool} floorYRef={floorY} centerRef={centerRef} forceRerender={forceRerender} />
-        <ExteriorModel path={exterior} scale={DEFAULT_RADIUS * 1.5} />
-        <Environment preset="sunset" />
-        <ambientLight intensity={0.6} />
-        <Physics gravity={[0, -50, 0]}>
-          <MovingPlatform radius={DEFAULT_RADIUS * 0.75} />
-          <CylindricalBoundary radius={DEFAULT_RADIUS * 0.75} height={10} />
-          <Player
-            directionRef={directionRef}
-            isMobile={mobile}
-            onRaise={() => {
-              floorYTarget.current += SPEED;
-              invalidate();
-            }}
-            onLower={() => {
-              floorYTarget.current -= SPEED;
-              invalidate();
-            }}
-          />
-        </Physics>
-        {pool.current.map(item => (
-          
-          <LevelShell key={item.id} logicalIdx={item.logicalIdx} floorYRef={floorY}>
-            <LevelContent logicalIdx={item.logicalIdx} center={centerRef.current} />
-          </LevelShell>
-        ))}
-      </Canvas>
+        
+        <Canvas
+          frameloop="demand"
+          dpr={[1, 1.5]}
+          gl={{ powerPreference: 'high-performance', antialias: false }}
+          camera={{ position: [0, 2, 12], rotation: [0, Math.PI / 2, 0], fov: 60 }}
+          style={{ position: 'absolute', inset: 0 }}
+          onCreated={({ scene }) => {
+            scene.background = new THREE.Color('#050a15');
+            scene.fog = new THREE.FogExp2('#050a15', 0.1);
+          }}
+        >
+          <Preload all />
+          <SmoothFloorMovement targetRef={floorYTarget} valueRef={floorY} />
+          <Recycler poolRef={pool} floorYRef={floorY} centerRef={centerRef} forceRerender={forceRerender} />
+          <ExteriorModel path={exterior} scale={DEFAULT_RADIUS * 1.5} />
+          <Environment preset="sunset" />
+          <ambientLight intensity={0.6} />
+          <Physics gravity={[0, -50, 0]}>
+            <MovingPlatform radius={DEFAULT_RADIUS * 0.75} />
+            <CylindricalBoundary radius={DEFAULT_RADIUS * 0.75} height={10} />
+            <Player
+              directionRef={directionRef}
+              isMobile={mobile}
+              onRaise={() => {
+                floorYTarget.current += SPEED;
+                invalidate();
+              }}
+              onLower={() => {
+                floorYTarget.current -= SPEED;
+                invalidate();
+              }}
+            />
+          </Physics>
+          {pool.current.map(item => (
+            
+            <LevelShell key={item.id} logicalIdx={item.logicalIdx} floorYRef={floorY}>
+              <LevelContent logicalIdx={item.logicalIdx} center={centerRef.current} />
+            </LevelShell>
+          ))}
+        </Canvas>
 
-      {mobile && (
-        <MobileControls
-          directionRef={directionRef}   
-          onRaise={() => {
-            floorYTarget.current += SPEED;
-            invalidate();
-          }}
-          onLower={() => {
-            floorYTarget.current -= SPEED;
-            invalidate();
-          }}
-        />
-      )}
-    </KeyboardControls>
+        {mobile && (
+          <MobileControls
+            directionRef={directionRef}
+            onRaise={() => { floorYTarget.current -= SPEED; invalidate(); }}
+            onLower={() => { floorYTarget.current += SPEED; invalidate(); }}
+            // style={{ can override but most of it's in MobileControls }}
+          />
+        )}
+
+      </KeyboardControls>
+    </div>
   );
 }

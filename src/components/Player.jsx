@@ -96,10 +96,10 @@ export function Player ({ onRaise, onLower, directionRef, isMobile }) {
     /* keyboard or joystick */
     if (isMobile && directionRef.current) {
       switch (directionRef.current) {
-        case 'up':    move.set( 0,0,-1); break;
-        case 'down':  move.set( 0,0, 1); break;
-        case 'left':  move.set(-1,0, 0); break;
-        case 'right': move.set( 1,0, 0); break;
+        case 'up':    move.set( 0,0,1); break;
+        case 'down':  move.set( 0,0, -1); break;
+        case 'left':  move.set(1,0, 0); break;
+        case 'right': move.set(-1,0, 0); break;
         default:                     move.set(0,0,0);
       }
     } else {
