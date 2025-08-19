@@ -1,15 +1,15 @@
 export const DEFAULT_RADIUS = 10;
-export const WINDOW = 4;
+export const WINDOW = 1;
 export const VISIBLE_LEVELS = WINDOW * 2 + 1;
-export const SPEED = 0.07;
+export const SPEED = 0.1;
 export const SMOOTH_SPEED = 8;
 export const Y_STEP = 15;
-export const Y_ADJUST = 3;
+export const Y_ADJUST = 0;
 export const Z_CENTER = 0;
 export const SLOTS_PER_LEVEL = 8;
 export const DEFAULT_MAX = 6;
-export const ABOVE_N = 2;
-export const BELOW_N = 0;
+export const ABOVE_N = 1;
+export const BELOW_N = 1;
 
 export const EMPTY_SECTION = Object.freeze({
   name: '',

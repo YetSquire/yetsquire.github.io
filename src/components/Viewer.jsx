@@ -28,7 +28,7 @@ export default function Viewer() {
   const mobile = isMobile();
 
   const centerRef = useRef(logicalCenter(0));
-
+  
   if (!pool.current) {
     const c = logicalCenter(0);
     pool.current = Array.from({ length: VISIBLE_LEVELS }, (_, i) => ({

@@ -4,7 +4,9 @@ import { Container } from './Container';
 import { FloatingInteractableModel } from './FloatingInteractableModel';
 import { MyIFrame } from './MyIFrame';
 import * as THREE from 'three';
+import { HoloPanel } from './Holopanel';
 import '../styling/sci-fi-panel.css';
+import { transform } from 'typescript';
 
 const MODEL_BEAM_INT   = 150;
 const MODEL_BEAM_DIST  = 6;
@@ -101,7 +103,7 @@ export function ExhibitRoom({
         </>
       )} */}
       
-      <Html
+      {/* <Html
         occlude="blending"
         transform
         distanceFactor={isCenter ? 4 : 4}
@@ -150,7 +152,15 @@ export function ExhibitRoom({
             </>
           )}
         </div>
-      </Html>
+      </Html> */}
+       <HoloPanel
+        title={title}
+        description={description}
+        videoId={videoUrl}
+        position={panelPos}
+        isCenter={isCenter}
+        isDeactivated={isDeactivated}
+      />
     </group>
   );
 }
