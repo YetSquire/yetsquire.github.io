@@ -1,0 +1,101 @@
+---
+import type { BlogPost } from '../data/posts';
+
+interface Props {
+	post: BlogPost;
+}
+
+const { post } = Astro.props;
+---
+
+<article class="post-card">
+	<h2><a href={`/post/${post.id}`}>{post.title}</a></h2>
+	<p class="date">{new Date(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+	<p class="description">{post.description}</p>
+	{post.image && <img src={post.image} alt={post.title} />}
+	{post.videoUrl && (
+		<div class="video-container">
+			<p><em>Contains video content</em></p>
+		</div>
+	)}
+	<div class="tags">
+		{post.tags.map(tag => (
+			<span class="tag">{tag}</span>
+		))}
+	</div>
+</article>
+
+<style>
+	.post-card {
+		border: 1px solid #ddd;
+		border-radius: 8px;
+		padding: 1.5rem;
+		margin-bottom: 2rem;
+		transition: box-shadow 0.2s;
+	}
+
+	.post-card:hover {
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	}
+
+	h2 {
+		margin-bottom: 0.5rem;
+		font-size: 1.5rem;
+	}
+
+	h2 a {
+		text-decoration: none;
+		color: #0066cc;
+	}
+
+	h2 a:hover {
+		text-decoration: underline;
+	}
+
+	.date {
+		color: #666;
+		font-size: 0.9rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.description {
+		margin-bottom: 1rem;
+		color: #555;
+	}
+
+	img {
+		max-width: 100%;
+		height: auto;
+		border-radius: 4px;
+		margin-bottom: 1rem;
+	}
+
+	.video-container {
+		background-color: #f0f0f0;
+		padding: 1rem;
+		border-radius: 4px;
+		margin-bottom: 1rem;
+	}
+
+	.tags {
+		display: flex;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.tag {
+		display: inline-block;
+		background-color: #e0e0e0;
+		color: #333;
+		padding: 0.25rem 0.75rem;
+		border-radius: 20px;
+		font-size: 0.85rem;
+		cursor: pointer;
+		transition: background-color 0.2s;
+	}
+
+	.tag:hover {
+		background-color: #0066cc;
+		color: white;
+	}
+</style>

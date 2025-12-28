@@ -1,16 +1,140 @@
 ---
 
+import Layout from '../layouts/Layout.astro';
+import { posts } from '../data/posts';
+
+const latestPost = posts.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout title="Home | My Blog">
+	<div class="hero">
+		<div class="hero-left">
+			<img src="/images/babel.jpg" alt="Andy Yao" class="hero-image" />
+		</div>
+
+		<div class="hero-right">
+			<p>
+				Hi! My name is Andy, developer, history nerd, and aspiring human.
+				<br><br>
+				I like building wearable tech and thinking about the past and the future.
+				<br><br>
+				This is a repository for my thoughts and projects.
+				They're all located under the 'posts' section, but I'd recommend
+				looking at the featured posts below to get started.
+				<br><br>
+				To learn more about myself and this website, see the <a href="/about">About</a> page.
+			</p>
+		</div>
+	</div>
+
+	<section class="featured">
+		<h2>Featured</h2>
+
+		<div class="featured-grid">
+			<a class="feature-card" href={latestPost ? `/post/${latestPost.id}` : '/posts'}>
+				<h3>Latest Post</h3>
+				<p class="muted">{latestPost ? latestPost.title : 'No posts yet'}</p>
+			</a>
+
+			<a class="feature-card" href="/posts?tags=blog">
+				<h3>Blog Posts</h3>
+				<p class="muted">View posts tagged "blog"</p>
+			</a>
+
+			<a class="feature-card" href="/posts?tags=projects">
+				<h3>Projects</h3>
+				<p class="muted">View posts tagged "projects"</p>
+			</a>
+		</div>
+        
+	</section>
+</Layout>
+
+<style>
+	.hero {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 2rem;
+		align-items: center;
+		padding: 3rem 0;
+		border-bottom: 2px solid #e0e0e0;
+		margin-bottom: 2rem;
+	}
+
+	.hero-left {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.hero-image {
+		width: 100%;
+		max-width: 420px;
+		height: auto;
+		border-radius: 8px;
+		object-fit: cover;
+	}
+
+	.hero-right p {
+		font-size: 1.15rem;
+		color: #666;
+		margin-bottom: 1.25rem;
+		line-height: 1.6;
+		text-align: left;
+	}
+
+	.cta-button {
+		display: inline-block;
+		background-color: #0066cc;
+		color: white;
+		padding: 0.75rem 1.5rem;
+		border-radius: 4px;
+		text-decoration: none;
+		font-weight: 500;
+		transition: background-color 0.2s;
+	}
+
+	.cta-button:hover {
+		background-color: #0052a3;
+	}
+
+	.featured {
+		text-align: center;
+		margin: 0 auto;
+	}
+
+	.featured h2 {
+		margin-bottom: 1rem;
+	}
+
+	.featured-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: 1rem;
+		margin-top: 1rem;
+	}
+
+	.feature-card {
+		display: block;
+		padding: 1.5rem;
+		border: 1px solid #e0e0e0;
+		border-radius: 4px;
+		text-decoration: none;
+		color: inherit;
+		transition: border-color 0.2s;
+	}
+
+	.feature-card:hover {
+		border-color: #0066cc;
+	}
+
+	.feature-card h3 {
+		margin-bottom: 0.5rem;
+	}
+
+	.muted {
+		color: #666;
+		font-size: 0.95rem;
+	}
+</style>

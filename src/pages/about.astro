@@ -1,0 +1,131 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="About | My Blog">
+	<article class="about-content">
+		<div class="about-hero">
+			<div class="hero-left">
+				<img src="images/babel.jpg" alt="babel" class="hero-image" />
+			</div>
+
+			<div class="hero-right">
+                <h1>About Me</h1>
+
+				<h2>Who I Am</h2>
+				<p>
+					Welcome! I'm a passionate developer and creator. This blog is where I share my projects,
+					learnings, and thoughts on web development and technology.
+
+                    <br><br>
+                    Oh, and I tend to use the tower of Babel as a profile picture.
+				</p>
+			</div>
+		</div>
+
+		<section>
+			<h2>What I Do</h2>
+			<p>
+				I specialize in building modern web applications using cutting-edge technologies like Astro,
+				React, and Node.js. I enjoy solving complex problems and creating beautiful, functional
+				user experiences.
+			</p>
+		</section>
+
+		<section>
+			<h2>Why This Blog?</h2>
+			<p>
+				This blog serves as a portfolio of my work and a way to document my journey in tech.
+				Through my posts, I hope to inspire others and share knowledge with the community.
+			</p>
+		</section>
+
+		<section>
+			<h2>Get In Touch</h2>
+			<p>
+				You're pretty much guaranteed to reach me via email: andyyao15 [at] gmail [dot] com</a>
+
+                <!-- add bot trap lol -->
+			</p>
+		</section>
+	</article>
+</Layout>
+
+<style>
+	.about-content {
+		max-width: 800px;
+		margin: 0 auto;
+	}
+
+	h1 {
+		margin-bottom: 2rem;
+		font-size: 2rem;
+	}
+
+	section {
+		margin-bottom: 2.5rem;
+	}
+
+	h2 {
+		margin-bottom: 1rem;
+		color: #0066cc;
+	}
+
+	p {
+		line-height: 1.8;
+		color: #555;
+		margin-bottom: 1rem;
+	}
+
+	section:last-child {
+		margin-bottom: 0;
+	}
+
+	/* About page hero */
+	.about-hero {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 2rem;
+		align-items: center;
+		margin-bottom: 2rem;
+	}
+
+	.hero-left {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+	}
+
+	.hero-image {
+		width: 75%;
+		max-width: 420px;
+		height: auto;
+		border-radius: 8px;
+		object-fit: cover;
+	}
+
+	.hero-right h2 {
+		margin-bottom: 0.75rem;
+	}
+
+	@media (max-width: 780px) {
+		.about-hero {
+			grid-template-columns: 1fr;
+			text-align: center;
+		}
+
+		.hero-right p {
+			text-align: left;
+		}
+
+		.hero-right {
+			order: 2;
+		}
+
+		.hero-left {
+			order: 1;
+		}
+	}
+</style>
