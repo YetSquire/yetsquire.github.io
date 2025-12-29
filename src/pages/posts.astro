@@ -2,6 +2,9 @@
 import Layout from '../layouts/Layout.astro';
 import PostCard from '../components/PostCard.astro';
 
+//TODO- load only a limited number of posts for performance
+const numberOfPostsToLoad = 100;
+
 // Load all markdown post files from the content directory
 const modules = import.meta.glob('../content/posts/**/*.md', { eager: true }) as Record<string, any>;
 const posts = Object.entries(modules).map(([path, mod]) => {
@@ -68,29 +71,20 @@ const sortedPosts = filteredPosts.sort((a, b) => new Date(b.date).getTime() - ne
 	<div class="filters">
 		<h3>Filter by Tags:</h3>
 		<div class="tag-buttons">
-			<a 
-				href="/posts" 
+			<button
+				id="tag-all"
 				class={`filter-tag ${selectedTags.length === 0 ? 'active' : ''}`}
 			>
 				All
-			</a>
-			{allTags.map(tag => {
-				const isActive = selectedTags.includes(tag);
-				const newTags = isActive
-					? selectedTags.filter(t => t !== tag)
-					: [...selectedTags, tag];
-				const queryParams = newTags.map(t => `tags=${encodeURIComponent(t)}`).join('&');
-				const href = newTags.length > 0 ? `/posts?${queryParams}` : '/posts';
-				
-				return (
-					<a 
-						href={href}
-						class={`filter-tag ${isActive ? 'active' : ''}`}
-					>
-						{tag}
-					</a>
-				);
-			})}
+			</button>
+			{allTags.map(tag => (
+				<button
+					class={`filter-tag ${selectedTags.includes(tag) ? 'active' : ''}`}
+					data-tag={tag}
+				>
+					{tag}
+				</button>
+			))}
 		</div>
 	</div>
 
@@ -98,7 +92,7 @@ const sortedPosts = filteredPosts.sort((a, b) => new Date(b.date).getTime() - ne
 		<p>Showing {sortedPosts.length} post{sortedPosts.length !== 1 ? 's' : ''}</p>
 	</div>
 
-	<div class="posts-list">
+	<div class="posts-list" id="posts-list">
 		{sortedPosts.length > 0 ? (
 			sortedPosts.map(post => (
 				<PostCard post={post} />
@@ -137,7 +131,6 @@ const sortedPosts = filteredPosts.sort((a, b) => new Date(b.date).getTime() - ne
 		background-color: white;
 		border: 2px solid #ddd;
 		border-radius: 20px;
-		text-decoration: none;
 		color: #333;
 		cursor: pointer;
 		transition: all 0.2s;
@@ -168,3 +161,65 @@ const sortedPosts = filteredPosts.sort((a, b) => new Date(b.date).getTime() - ne
 		font-style: italic;
 	}
 </style>
+
+<script define:vars={{ initialSelectedTags: selectedTags }}>
+// Client-side filtering without rebuilding HTML to preserve component styles
+const currentSelectedTags = new Set(initialSelectedTags);
+const postListEl = document.getElementById('posts-list');
+const tagButtons = Array.from(document.querySelectorAll('.filter-tag'));
+const allBtn = document.getElementById('tag-all');
+const postsCountEl = document.querySelector('.posts-count p');
+
+function getPostCards() {
+    return Array.from(postListEl.querySelectorAll('.post-card'));
+}
+
+function updateButtonStates() {
+    tagButtons.forEach(btn => {
+        const tag = btn.getAttribute('data-tag');
+        if (tag) btn.classList.toggle('active', currentSelectedTags.has(tag));
+        else if (btn.id === 'tag-all') btn.classList.toggle('active', currentSelectedTags.size === 0);
+    });
+}
+
+function renderPosts() {
+    const cards = getPostCards();
+    let visibleCount = 0;
+    cards.forEach(card => {
+        const tags = (card.dataset.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+        const matches = currentSelectedTags.size === 0 || tags.some(t => currentSelectedTags.has(t));
+        card.style.display = matches ? '' : 'none';
+        if (matches) visibleCount++;
+    });
+    postsCountEl.textContent = `Showing ${visibleCount} post${visibleCount !== 1 ? 's' : ''}`;
+
+    const queryParams = Array.from(currentSelectedTags).map(t => `tags=${encodeURIComponent(t)}`).join('&');
+    const newUrl = queryParams ? `/posts?${queryParams}` : '/posts';
+    window.history.replaceState(null, '', newUrl);
+}
+
+if (allBtn) {
+    allBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        currentSelectedTags.clear();
+        updateButtonStates();
+        renderPosts();
+    });
+}
+
+tagButtons.forEach(btn => {
+    const tag = btn.getAttribute('data-tag');
+    if (!tag) return;
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (currentSelectedTags.has(tag)) currentSelectedTags.delete(tag);
+        else currentSelectedTags.add(tag);
+        updateButtonStates();
+        renderPosts();
+    });
+});
+
+// initial state
+updateButtonStates();
+renderPosts();
+</script>

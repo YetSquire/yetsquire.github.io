@@ -1,9 +1,11 @@
 ---
 const { post } = Astro.props;
 const displayImage = post.cover;
+
+const dataTags = (post.tags || []).join(',');
 ---
 
-<article class="post-card">
+<article class="post-card" data-tags={dataTags} data-id={post.id}>
 	<h2><a href={post.pathname}>{post.title}</a></h2>
 	<p class="date">{new Date(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
 	<p class="description">{post.description}</p>
