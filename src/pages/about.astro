@@ -25,9 +25,9 @@ import Layout from '../layouts/Layout.astro';
 		<section>
 			<h2>What I Do</h2>
 			<p>
-				As mentioned, I'm interested in extended reality, metacognition, and history.
-                <br>
                 I'm currently a software developer at Mira, a smart glasses startup based in California. 
+				<br>
+				As mentioned, I'm interested in extended reality, metacognition, and history.
                 <br>
                 In my free time, I tinker with various personal projects, read history/fantasy/sci-fi, and run. 
                 <br>
@@ -64,7 +64,7 @@ import Layout from '../layouts/Layout.astro';
 					<a class="icon-btn" href="/resume.pdf" target="_blank" rel="noopener" aria-describedby="resume-attrib" aria-label="Resume">
 						<img src="/images/about/resume.png" alt="Resume" />
 					</a>
-					<div id="resume-attrib" class="tooltip" role="tooltip">Resume icon by Freepik — <a href="https://www.flaticon.com/free-icons/resume" target="_blank" rel="noopener">Flaticon</a></div>
+					<div id="resume-attrib" class="tooltip" role="tooltip">Andy's note- resume icon by <a href="https://www.flaticon.com/free-icons/resume" target="_blank" rel="noopener">Freepik</a></div>
 				</div>
 			</div>
             
@@ -219,6 +219,9 @@ import Layout from '../layouts/Layout.astro';
 	document.addEventListener('visibilitychange', () => {
 		if (document.visibilityState === 'hidden') {
 			document.querySelectorAll('.icon-btn').forEach((btn) => {
+						try { if (btn instanceof HTMLElement) btn.blur(); } catch (e) {}
+					});
+			document.querySelectorAll('resume-attrib').forEach((btn) => {
 						try { if (btn instanceof HTMLElement) btn.blur(); } catch (e) {}
 					});
 		}

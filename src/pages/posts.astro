@@ -1,7 +1,51 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import PostCard from '../components/PostCard.astro';
-import { posts } from '../data/posts';
+
+// Load all markdown post files from the content directory
+const modules = import.meta.glob('../content/posts/**/*.md', { eager: true }) as Record<string, any>;
+const posts = Object.entries(modules).map(([path, mod]) => {
+	const fm = mod.frontmatter || {};
+	const pathEnd = path.split('/');
+	const id = fm.id || pathEnd[pathEnd.length - 1].replace(/\.md$/, '');
+
+	// Helper function to auto-route image paths
+	const routeImagePath = (imagePath: string): string => {
+		if (!imagePath) return '';
+		// If already a full URL or absolute path, leave as-is
+		if (imagePath.startsWith('/') || imagePath.startsWith('http')) return imagePath;
+		// Otherwise, prefix with /images/posts/{id}/
+		return `/images/posts/${id}/${imagePath}`;
+	};
+
+	// Support either `cover` or legacy/single `image` field for cover
+	const coverSource = fm.cover || fm.image || '';
+	const cover = coverSource ? routeImagePath(coverSource) : '';
+
+	// Normalize images: support `images` array and single `image` field
+	const fmImages = Array.isArray(fm.images) ? fm.images.slice() : (fm.images ? [fm.images] : []);
+	if (fm.image && !fmImages.includes(fm.image)) fmImages.unshift(fm.image);
+	const images = fmImages.map((img: string) => routeImagePath(img)).filter(Boolean);
+
+	// Normalize videos: support `videos` array and single `video` field
+	const fmVideos = Array.isArray(fm.videos) ? fm.videos.slice() : (fm.videos ? [fm.videos] : []);
+	if (fm.video && !fmVideos.includes(fm.video)) fmVideos.unshift(fm.video);
+	const videos = fmVideos.filter(Boolean);
+
+	return {
+		id,
+		title: fm.title || id,
+		description: fm.description || '',
+		date: fm.date || '1970-01-01',
+		tags: fm.tags || [],
+		cover,
+		images,
+		videos,
+		pathname: fm.pathname,
+		content: fm.content || '',
+		file: path,
+	};
+});
 
 // Get all unique tags
 const allTags = [...new Set(posts.flatMap(post => post.tags))].sort();

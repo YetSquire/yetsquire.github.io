@@ -1,9 +1,32 @@
 ---
 
 import Layout from '../layouts/Layout.astro';
-import { posts } from '../data/posts';
 
-const latestPost = posts.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+// Find latest post by inspecting the directory structure under src/content/posts
+// We pick the highest year directory, then highest month directory inside it,
+// then choose the newest post by frontmatter `date` inside that folder.
+const modules = import.meta.glob('../content/posts/**/*.md', { eager: true }) as Record<string, any>;
+const allPosts = Object.entries(modules).map(([path, mod]) => {
+	const fm = mod.frontmatter || {};
+	const parts = path.split('/');
+	const filename = parts[parts.length - 1];
+	const year = Number(parts[parts.length - 3]) || 0;
+	const month = Number(parts[parts.length - 2]) || 0;
+	const id = fm.id || filename.replace(/\.md$/, '');
+	return { id, fm, path, year, month };
+});
+
+let latestPost = null;
+if (allPosts.length > 0) {
+	const latestYear = Math.max(...allPosts.map(p => p.year));
+	const inYear = allPosts.filter(p => p.year === latestYear);
+	const latestMonth = Math.max(...inYear.map(p => p.month));
+	const inMonth = inYear.filter(p => p.month === latestMonth);
+
+	inMonth.sort((a, b) => new Date(b.fm.date || '1970-01-01').getTime() - new Date(a.fm.date || '1970-01-01').getTime());
+	const lp = inMonth[0];
+	if (lp) latestPost = { id: lp.id, title: lp.fm.title || lp.id, date: lp.fm.date || '' };
+}
 
 ---
 

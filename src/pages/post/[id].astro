@@ -1,0 +1,90 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const { params } = Astro;
+const id = params.id;
+
+// load all markdown posts
+const modules = import.meta.glob('../../content/posts/**/*.md', { eager: true }) as Record<string, any>;
+
+// find module by frontmatter id or filename
+let mod = null;
+for (const [path, m] of Object.entries(modules)) {
+    const fm = m.frontmatter || {};
+    const parts = path.split('/');
+    const filename = parts[parts.length - 1].replace(/\.md$/, '');
+    if (fm.id === id || filename === id) {
+        mod = m;
+        break;
+    }
+}
+
+if (!mod) {
+    throw new Error(`Post not found: ${id}`);
+}
+
+const fm = mod.frontmatter || {};
+const Content = mod.default;
+
+export async function getStaticPaths() {
+    const modules = import.meta.glob('../../content/posts/**/*.md', { eager: true }) as Record<string, any>;
+    const paths = Object.entries(modules).map(([path, mod]) => {
+        const fm = mod.frontmatter || {};
+        const parts = path.split('/');
+        const filename = parts[parts.length - 1].replace(/\.md$/, '');
+        const postId = fm.id || filename;
+        return { params: { id: postId } };
+    });
+    return paths;
+}
+
+// Helper to route image paths same as posts listing
+const routeImagePath = (imagePath: string): string => {
+    if (!imagePath) return '';
+    if (imagePath.startsWith('/') || imagePath.startsWith('http')) return imagePath;
+    return `/images/posts/${id}/${imagePath}`;
+};
+
+const cover = fm.cover || fm.image ? (routeImagePath(fm.cover || fm.image)) : '';
+const images = (Array.isArray(fm.images) ? fm.images : (fm.images ? [fm.images] : [])).map((i: string) => routeImagePath(i));
+const videos = Array.isArray(fm.videos) ? fm.videos : (fm.videos ? [fm.videos] : []);
+---
+
+<Layout title={fm.title || id}>
+    <article class="post-full">
+        <h1>{fm.title}</h1>
+        <p class="date">{new Date(fm.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+
+        {cover && <img class="cover" src={cover} alt={fm.title} />}
+
+        <section class="post-content">
+            <Content />
+        </section>
+
+        {images.length > 0 && (
+            <section class="inline-images">
+                <h3>Images</h3>
+                {images.map((src: string) => (<img src={src} alt={fm.title} />))}
+            </section>
+        )}
+
+        {videos && videos.length > 0 && (
+            <section class="inline-videos">
+                <h3>Videos</h3>
+                {videos.map((v: string) => (
+                    <div class="video-container">
+                        <video controls src={v}></video>
+                    </div>
+                ))}
+            </section>
+        )}
+
+    </article>
+</Layout>
+
+<style>
+    .cover { max-width: 100%; height: auto; border-radius: 6px; margin-bottom: 1rem; }
+    .post-content img { max-width: 100%; height: auto; display: block; margin: 1rem 0; }
+    .inline-images img { max-width: 100%; height: auto; margin-bottom: 1rem; }
+    .video-container video { max-width: 100%; height: auto; margin-bottom: 1rem; }
+</style>
