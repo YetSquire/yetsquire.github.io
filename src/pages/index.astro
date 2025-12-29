@@ -10,7 +10,14 @@ const latestPost = posts.slice().sort((a, b) => new Date(b.date).getTime() - new
 <Layout title="Home | My Blog">
 	<div class="hero">
 		<div class="hero-left">
-			<img src="/images/babel.jpg" alt="Andy Yao" class="hero-image" />
+			<div class="card-widget" tabindex="0" aria-label="Hero image cards">
+				<div class="card card--back">
+					<img src="/images/babel.jpg" alt="back" />
+				</div>
+				<div class="card card--front">
+					<img src="/images/test.png" alt="front" />
+				</div>
+			</div>
 		</div>
 
 		<div class="hero-right">
@@ -115,6 +122,43 @@ const latestPost = posts.slice().sort((a, b) => new Date(b.date).getTime() - new
 		margin-top: 1rem;
 	}
 
+	/* Card widget styles */
+	.card-widget {
+		position: relative;
+		width: 400px;
+		height: 500px;
+		display: inline-block;
+		cursor: pointer;
+	}
+
+	.card-widget .card {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		border-radius: 8px;
+		overflow: hidden;
+		box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+		transition: transform 300ms cubic-bezier(.2,.9,.2,1), box-shadow 300ms;
+	}
+
+	.card-widget img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+	.card--back { transform: translate(12px, 8px) rotate(-6deg) skew(-4deg); z-index: 1; }
+	.card--front { transform: translate(-8px, -6px) rotate(6deg) skew(4deg); z-index: 2; }
+
+	.card-widget.is-swapped .card--back { transform: translate(-8px, -6px) rotate(6deg) skew(4deg); z-index: 2; }
+	.card-widget.is-swapped .card--front { transform: translate(12px, 8px) rotate(-6deg) skew(-4deg); z-index: 1; }
+
+	.card-widget:hover .card,
+	.card-widget:focus .card,
+	.card-widget.is-swapped .card { box-shadow: 0 14px 30px rgba(0,0,0,0.16); }
+
+	@media (max-width: 780px) {
+		.card-widget { width: 220px; height: 150px; }
+	}
+
 	.feature-card {
 		display: block;
 		padding: 1.5rem;
@@ -138,3 +182,17 @@ const latestPost = posts.slice().sort((a, b) => new Date(b.date).getTime() - new
 		font-size: 0.95rem;
 	}
 </style>
+
+<script>
+// Card widget interaction: swap on hover/focus, swap back on leave/blur
+(() => {
+	const widget = document.querySelector('.card-widget');
+	if (!widget) return;
+
+	const swap = () => widget.classList.toggle('is-swapped');
+
+	// widget.addEventListener('mouseenter', swap);
+	// widget.addEventListener('focus', swap);
+	widget.addEventListener('click', swap);
+})();
+</script>
