@@ -46,7 +46,7 @@ if (lp) latestPost = { id: lp.id, title: lp.fm.title || lp.id, date: lp.fm.date 
 <p>
 Hi! My name is Andy, developer, history nerd, and aspiring human.
 <br><br>
-I like building <a class="hero-link" href="/posts?tags=projects" data-astro-reload>wearable tech</a> and thinking about the <a class="hero-link" href="/posts?tags=blog" data-astro-reload>past</a>.
+I like building <a class="hero-link" href="/posts?tags=projects">wearable tech</a> and thinking about the <a class="hero-link" href="/posts?tags=blog">past</a>.
 <br><br>
 To learn more about myself and this website, see the <a href="/about">About</a> page.
 </p>
@@ -62,12 +62,12 @@ To learn more about myself and this website, see the <a href="/about">About</a> 
 <p class="muted">{latestPost ? latestPost.title : 'No posts yet'}</p>
 </a>
 
-<a class="feature-card" href="/posts?tags=blog" data-astro-reload>
+<a class="feature-card" href="/posts?tags=blog">
 <h3>Blog Posts</h3>
 <p class="muted">View posts tagged "blog"</p>
 </a>
 
-<a class="feature-card" href="/posts?tags=projects" data-astro-reload>
+<a class="feature-card" href="/posts?tags=projects">
 <h3>Projects</h3>
 <p class="muted">View posts tagged "projects"</p>
 </a>
