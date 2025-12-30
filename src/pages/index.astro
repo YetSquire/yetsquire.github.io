@@ -1,5 +1,4 @@
 ---
-
 import Layout from '../layouts/Layout.astro';
 
 // Find latest post by inspecting the directory structure under src/content/posts
@@ -7,215 +6,242 @@ import Layout from '../layouts/Layout.astro';
 // then choose the newest post by frontmatter `date` inside that folder.
 const modules = import.meta.glob('../content/posts/**/*.md', { eager: true }) as Record<string, any>;
 const allPosts = Object.entries(modules).map(([path, mod]) => {
-	const fm = mod.frontmatter || {};
-	const parts = path.split('/');
-	const filename = parts[parts.length - 1];
-	const year = Number(parts[parts.length - 3]) || 0;
-	const month = Number(parts[parts.length - 2]) || 0;
-	const id = fm.id || filename.replace(/\.md$/, '');
-	return { id, fm, path, year, month };
+const fm = mod.frontmatter || {};
+const parts = path.split('/');
+const filename = parts[parts.length - 1];
+const year = Number(parts[parts.length - 3]) || 0;
+const month = Number(parts[parts.length - 2]) || 0;
+const id = fm.id || filename.replace(/\.md$/, '');
+return { id, fm, path, year, month };
 });
 
 let latestPost = null;
 if (allPosts.length > 0) {
-	const latestYear = Math.max(...allPosts.map(p => p.year));
-	const inYear = allPosts.filter(p => p.year === latestYear);
-	const latestMonth = Math.max(...inYear.map(p => p.month));
-	const inMonth = inYear.filter(p => p.month === latestMonth);
+const latestYear = Math.max(...allPosts.map(p => p.year));
+const inYear = allPosts.filter(p => p.year === latestYear);
+const latestMonth = Math.max(...inYear.map(p => p.month));
+const inMonth = inYear.filter(p => p.month === latestMonth);
 
-	inMonth.sort((a, b) => new Date(b.fm.date || '1970-01-01').getTime() - new Date(a.fm.date || '1970-01-01').getTime());
-	const lp = inMonth[0];
-	if (lp) latestPost = { id: lp.id, title: lp.fm.title || lp.id, date: lp.fm.date || '' };
+inMonth.sort((a, b) => new Date(b.fm.date || '1970-01-01').getTime() - new Date(a.fm.date || '1970-01-01').getTime());
+const lp = inMonth[0];
+if (lp) latestPost = { id: lp.id, title: lp.fm.title || lp.id, date: lp.fm.date || '' };
 }
 
 ---
 
 <Layout title="Home | My Blog">
-	<div class="hero">
-		<div class="hero-left">
-			<div class="card-widget" tabindex="0" aria-label="Hero image cards">
-				<div class="card card--back">
-					<img src="/images/babel.jpg" alt="back" />
-				</div>
-				<div class="card card--front">
-					<img src="/images/test.png" alt="front" />
-				</div>
-			</div>
-		</div>
+<div class="hero">
+<div class="hero-left">
+<div class="card-widget" tabindex="0" aria-label="Hero image cards">
+<div class="card card--back">
+<img src="/images/babel.jpg" alt="back" />
+</div>
+<div class="card card--front">
+<img src="/images/test.png" alt="front" />
+</div>
+</div>
+</div>
 
-		<div class="hero-right">
-			<p>
-				Hi! My name is Andy, developer, history nerd, and aspiring human.
-				<br><br>
-				I like building wearable tech and thinking about the past and the future.
-				<br><br>
-				This is a repository for my thoughts and projects.
-				They're all located under the 'posts' section, but I'd recommend
-				looking at the featured posts below to get started.
-				<br><br>
-				To learn more about myself and this website, see the <a href="/about">About</a> page.
-			</p>
-		</div>
-	</div>
+<div class="hero-right">
+<p>
+Hi! My name is Andy, developer, history nerd, and aspiring human.
+<br><br>
+I like building <a class="hero-link" href="/posts?tags=projects">wearable tech</a> and thinking about the <a class="hero-link" href="/posts?tags=blog">past</a>.
+<br><br>
+To learn more about myself and this website, see the <a href="/about">About</a> page.
+</p>
+</div>
+</div>
 
-	<section class="featured">
-		<h2>Featured</h2>
+<section class="featured">
+<h2>Featured</h2>
 
-		<div class="featured-grid">
-			<a class="feature-card" href={latestPost ? `/post/${latestPost.id}` : '/posts'}>
-				<h3>Latest Post</h3>
-				<p class="muted">{latestPost ? latestPost.title : 'No posts yet'}</p>
-			</a>
+<div class="featured-grid">
+<a class="feature-card" href={latestPost ? `/post/${latestPost.id}` : '/posts'}>
+<h3>Latest Post</h3>
+<p class="muted">{latestPost ? latestPost.title : 'No posts yet'}</p>
+</a>
 
-			<a class="feature-card" href="/posts?tags=blog">
-				<h3>Blog Posts</h3>
-				<p class="muted">View posts tagged "blog"</p>
-			</a>
+<a class="feature-card" href="/posts?tags=blog">
+<h3>Blog Posts</h3>
+<p class="muted">View posts tagged "blog"</p>
+</a>
 
-			<a class="feature-card" href="/posts?tags=projects">
-				<h3>Projects</h3>
-				<p class="muted">View posts tagged "projects"</p>
-			</a>
-		</div>
+<a class="feature-card" href="/posts?tags=projects">
+<h3>Projects</h3>
+<p class="muted">View posts tagged "projects"</p>
+</a>
+</div>
         
-	</section>
+</section>
 </Layout>
 
 <style>
-	.hero {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 2rem;
-		align-items: center;
-		padding: 3rem 0;
-		border-bottom: 2px solid #e0e0e0;
-		margin-bottom: 2rem;
-	}
+.hero {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 2rem;
+align-items: center;
+padding: 3rem 0;
+border-bottom: 2px solid #30363d;
+margin-bottom: 2rem;
+}
 
-	.hero-left {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
+.hero-left {
+display: flex;
+align-items: center;
+justify-content: center;
+}
 
-	.hero-image {
-		width: 100%;
-		max-width: 420px;
-		height: auto;
-		border-radius: 8px;
-		object-fit: cover;
-	}
+.hero-image {
+width: 100%;
+max-width: 420px;
+height: auto;
+border-radius: 8px;
+object-fit: cover;
+}
 
-	.hero-right p {
-		font-size: 1.15rem;
-		color: #666;
-		margin-bottom: 1.25rem;
-		line-height: 1.6;
-		text-align: left;
-	}
+.hero-right p {
+font-size: 1.15rem;
+color: #8b949e;
+margin-bottom: 1.25rem;
+line-height: 1.6;
+text-align: left;
+}
 
-	.cta-button {
-		display: inline-block;
-		background-color: #0066cc;
-		color: white;
-		padding: 0.75rem 1.5rem;
-		border-radius: 4px;
-		text-decoration: none;
-		font-weight: 500;
-		transition: background-color 0.2s;
-	}
+.hero-link {
+position: relative;
+color: #58a6ff;
+font-weight: 600;
+text-decoration: none;
+overflow: hidden;
+display: inline-block;
+}
 
-	.cta-button:hover {
-		background-color: #0052a3;
-	}
+.hero-link::before {
+content: '';
+position: absolute;
+top: 0;
+left: -100%;
+width: 100%;
+height: 100%;
+background: linear-gradient(90deg, transparent, rgba(88, 166, 255, 0.3), transparent);
+transition: left 0.5s ease-in-out;
+}
 
-	.featured {
-		text-align: center;
-		margin: 0 auto;
-	}
+.hero-link:hover::before {
+left: 100%;
+}
 
-	.featured h2 {
-		margin-bottom: 1rem;
-	}
+.hero-link:hover {
+color: #79c0ff;
+text-decoration: underline;
+text-decoration-thickness: 2px;
+text-underline-offset: 4px;
+}
 
-	.featured-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-		gap: 1rem;
-		margin-top: 1rem;
-	}
+.cta-button {
+display: inline-block;
+background-color: #58a6ff;
+color: white;
+padding: 0.75rem 1.5rem;
+border-radius: 4px;
+text-decoration: none;
+font-weight: 500;
+transition: background-color 0.2s;
+}
 
-	/* Card widget styles */
-	.card-widget {
-		position: relative;
-		width: 400px;
-		height: 500px;
-		display: inline-block;
-		cursor: pointer;
-	}
+.cta-button:hover {
+background-color: #79c0ff;
+}
 
-	.card-widget .card {
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		border-radius: 8px;
-		overflow: hidden;
-		box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-		transition: transform 300ms cubic-bezier(.2,.9,.2,1), box-shadow 300ms;
-	}
+.featured {
+text-align: center;
+margin: 0 auto;
+}
 
-	.card-widget img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.featured h2 {
+margin-bottom: 1rem;
+}
 
-	.card--back { transform: translate(12px, 8px) rotate(-6deg) skew(-4deg); z-index: 1; }
-	.card--front { transform: translate(-8px, -6px) rotate(6deg) skew(4deg); z-index: 2; }
+.featured-grid {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+gap: 1rem;
+margin-top: 1rem;
+}
 
-	.card-widget.is-swapped .card--back { transform: translate(-8px, -6px) rotate(6deg) skew(4deg); z-index: 2; }
-	.card-widget.is-swapped .card--front { transform: translate(12px, 8px) rotate(-6deg) skew(-4deg); z-index: 1; }
+/* Card widget styles */
+.card-widget {
+position: relative;
+width: 400px;
+height: 500px;
+display: inline-block;
+cursor: pointer;
+}
 
-	.card-widget:hover .card,
-	.card-widget:focus .card,
-	.card-widget.is-swapped .card { box-shadow: 0 14px 30px rgba(0,0,0,0.16); }
+.card-widget .card {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+border-radius: 8px;
+overflow: hidden;
+box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+transition: transform 300ms cubic-bezier(.2,.9,.2,1), box-shadow 300ms;
+}
 
-	@media (max-width: 780px) {
-		.card-widget { width: 220px; height: 150px; }
-	}
+.card-widget img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-	.feature-card {
-		display: block;
-		padding: 1.5rem;
-		border: 1px solid #e0e0e0;
-		border-radius: 4px;
-		text-decoration: none;
-		color: inherit;
-		transition: border-color 0.2s;
-	}
+.card--back { transform: translate(12px, 8px) rotate(-6deg) skew(-4deg); z-index: 1; }
+.card--front { transform: translate(-8px, -6px) rotate(6deg) skew(4deg); z-index: 2; }
 
-	.feature-card:hover {
-		border-color: #0066cc;
-	}
+.card-widget.is-swapped .card--back { transform: translate(-8px, -6px) rotate(6deg) skew(4deg); z-index: 2; }
+.card-widget.is-swapped .card--front { transform: translate(12px, 8px) rotate(-6deg) skew(-4deg); z-index: 1; }
 
-	.feature-card h3 {
-		margin-bottom: 0.5rem;
-	}
+.card-widget:hover .card,
+.card-widget:focus .card,
+.card-widget.is-swapped .card { box-shadow: 0 14px 30px rgba(0,0,0,0.5); }
 
-	.muted {
-		color: #666;
-		font-size: 0.95rem;
-	}
+@media (max-width: 780px) {
+.card-widget { width: 220px; height: 150px; }
+}
+
+.feature-card {
+display: block;
+padding: 1.5rem;
+border: 1px solid #30363d;
+border-radius: 4px;
+text-decoration: none;
+color: inherit;
+transition: all 0.2s;
+background-color: #0d1117;
+}
+
+.feature-card:hover {
+border-color: #58a6ff;
+box-shadow: 0 0 12px rgba(88, 166, 255, 0.2);
+}
+
+.feature-card h3 {
+margin-bottom: 0.5rem;
+color: #f0f6fc;
+}
+
+.muted {
+color: #8b949e;
+font-size: 0.95rem;
+}
 </style>
 
 <script>
-// Card widget interaction: swap on hover/focus, swap back on leave/blur
+// Card widget interaction: swap on click
 (() => {
-	const widget = document.querySelector('.card-widget');
-	if (!widget) return;
+const widget = document.querySelector('.card-widget');
+if (!widget) return;
 
-	const swap = () => widget.classList.toggle('is-swapped');
-
-	// widget.addEventListener('mouseenter', swap);
-	// widget.addEventListener('focus', swap);
-	widget.addEventListener('click', swap);
+const swap = () => widget.classList.toggle('is-swapped');
+widget.addEventListener('click', swap);
 })();
 </script>
