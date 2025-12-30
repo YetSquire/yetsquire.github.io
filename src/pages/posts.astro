@@ -1,68 +1,87 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import PostCard from '../components/PostCard.astro';
+import Layout from "../layouts/Layout.astro";
+import PostCard from "../components/PostCard.astro";
 
 //TODO- load only a limited number of posts for performance
+//TODO- keep posts that are still relevant around
 const numberOfPostsToLoad = 100;
 
 // Load all markdown post files from the content directory
-const modules = import.meta.glob('../content/posts/**/*.md', { eager: true }) as Record<string, any>;
+const modules = import.meta.glob("../content/posts/**/*.md", {
+	eager: true,
+}) as Record<string, any>;
 const posts = Object.entries(modules).map(([path, mod]) => {
 	const fm = mod.frontmatter || {};
-	const pathEnd = path.split('/');
-	const id = fm.id || pathEnd[pathEnd.length - 1].replace(/\.md$/, '');
+	const pathEnd = path.split("/");
+	const id = fm.id || pathEnd[pathEnd.length - 1].replace(/\.md$/, "");
 
 	// Helper function to auto-route image paths
 	const routeImagePath = (imagePath: string): string => {
-		if (!imagePath) return '';
+		if (!imagePath) return "";
 		// If already a full URL or absolute path, leave as-is
-		if (imagePath.startsWith('/') || imagePath.startsWith('http')) return imagePath;
+		if (imagePath.startsWith("/") || imagePath.startsWith("http"))
+			return imagePath;
 		// Otherwise, prefix with /images/posts/{id}/
 		return `/images/posts/${id}/${imagePath}`;
 	};
 
 	// Support either `cover` or legacy/single `image` field for cover
-	const coverSource = fm.cover || fm.image || '';
-	const cover = coverSource ? routeImagePath(coverSource) : '';
+	const coverSource = fm.cover || fm.image || "";
+	const cover = coverSource ? routeImagePath(coverSource) : "";
 
 	// Normalize images: support `images` array and single `image` field
-	const fmImages = Array.isArray(fm.images) ? fm.images.slice() : (fm.images ? [fm.images] : []);
+	const fmImages = Array.isArray(fm.images)
+		? fm.images.slice()
+		: fm.images
+			? [fm.images]
+			: [];
 	if (fm.image && !fmImages.includes(fm.image)) fmImages.unshift(fm.image);
-	const images = fmImages.map((img: string) => routeImagePath(img)).filter(Boolean);
+	const images = fmImages
+		.map((img: string) => routeImagePath(img))
+		.filter(Boolean);
 
 	// Normalize videos: support `videos` array and single `video` field
-	const fmVideos = Array.isArray(fm.videos) ? fm.videos.slice() : (fm.videos ? [fm.videos] : []);
+	const fmVideos = Array.isArray(fm.videos)
+		? fm.videos.slice()
+		: fm.videos
+			? [fm.videos]
+			: [];
 	if (fm.video && !fmVideos.includes(fm.video)) fmVideos.unshift(fm.video);
 	const videos = fmVideos.filter(Boolean);
 
 	return {
 		id,
 		title: fm.title || id,
-		description: fm.description || '',
-		date: fm.date || '1970-01-01',
+		description: fm.description || "",
+		date: fm.date || "1970-01-01",
 		tags: fm.tags || [],
 		cover,
 		images,
 		videos,
 		pathname: fm.pathname,
-		content: fm.content || '',
+		content: fm.content || "",
 		file: path,
 	};
 });
 
 // Get all unique tags
-const allTags = [...new Set(posts.flatMap(post => post.tags))].sort();
+const allTags = [...new Set(posts.flatMap((post) => post.tags))].sort();
 
 // Get selected tags from URL params
-const selectedTags = new URL(Astro.request.url).searchParams.getAll('tags');
+const selectedTags = new URL(Astro.request.url).searchParams.getAll("tags");
 
 // Filter posts based on selected tags
-const filteredPosts = selectedTags.length > 0
-	? posts.filter(post => selectedTags.some(tag => post.tags.includes(tag)))
-	: posts;
+const filteredPosts =
+	selectedTags.length > 0
+		? posts.filter((post) =>
+				selectedTags.some((tag) => post.tags.includes(tag)),
+			)
+		: posts;
 
 // Sort posts by date (newest first)
-const sortedPosts = filteredPosts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+const sortedPosts = filteredPosts.sort(
+	(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+);
 ---
 
 <Layout title="Posts | My Blog">
@@ -78,33 +97,39 @@ const sortedPosts = filteredPosts.sort((a, b) => new Date(b.date).getTime() - ne
 		<div class="tag-buttons">
 			<button
 				id="tag-all"
-				class={`filter-tag ${selectedTags.length === 0 ? 'active' : ''}`}
+				class={`filter-tag ${selectedTags.length === 0 ? "active" : ""}`}
 			>
 				All
 			</button>
-			{allTags.map(tag => (
-				<button
-					class={`filter-tag ${selectedTags.includes(tag) ? 'active' : ''}`}
-					data-tag={tag}
-				>
-					{tag}
-				</button>
-			))}
+			{
+				allTags.map((tag) => (
+					<button
+						class={`filter-tag ${selectedTags.includes(tag) ? "active" : ""}`}
+						data-tag={tag}
+					>
+						{tag}
+					</button>
+				))
+			}
 		</div>
 	</div>
 
 	<div class="posts-count">
-		<p>Showing {sortedPosts.length} post{sortedPosts.length !== 1 ? 's' : ''}</p>
+		<p>
+			Showing {sortedPosts.length} post{
+				sortedPosts.length !== 1 ? "s" : ""
+			}
+		</p>
 	</div>
 
 	<div class="posts-list" id="posts-list">
-		{sortedPosts.length > 0 ? (
-			sortedPosts.map(post => (
-				<PostCard post={post} />
-			))
-		) : (
-			<p class="no-posts">No posts found with the selected tags.</p>
-		)}
+		{
+			sortedPosts.length > 0 ? (
+				sortedPosts.map((post) => <PostCard post={post} />)
+			) : (
+				<p class="no-posts">No posts found with the selected tags.</p>
+			)
+		}
 	</div>
 </Layout>
 
