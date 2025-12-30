@@ -60,31 +60,5 @@ const videos = Array.isArray(fm.videos) ? fm.videos : (fm.videos ? [fm.videos] :
         <section class="post-content">
             <Content />
         </section>
-
-        {images.length > 0 && (
-            <section class="inline-images">
-                <h3>Images</h3>
-                {images.map((src: string) => (<img src={src} alt={fm.title} />))}
-            </section>
-        )}
-
-        {videos && videos.length > 0 && (
-            <section class="inline-videos">
-                <h3>Videos</h3>
-                {videos.map((v: string) => (
-                    <div class="video-container">
-                        <video controls src={v}></video>
-                    </div>
-                ))}
-            </section>
-        )}
-
     </article>
 </Layout>
-
-<style>
-    .cover { max-width: 100%; height: auto; border-radius: 6px; margin-bottom: 1rem; }
-    .post-content img { max-width: 100%; height: auto; display: block; margin: 1rem 0; }
-    .inline-images img { max-width: 100%; height: auto; margin-bottom: 1rem; }
-    .video-container video { max-width: 100%; height: auto; margin-bottom: 1rem; }
-</style>
