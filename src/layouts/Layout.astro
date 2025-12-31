@@ -1,111 +1,122 @@
 ---
-import { ViewTransitions } from 'astro:transitions';
+import { ClientRouter } from "astro:transitions";
 
 interface Props {
-title: string;
+    title: string;
 }
 
 const { title } = Astro.props;
 ---
 
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<meta name="viewport" content="width=device-width" />
-<meta name="generator" content={Astro.generator} />
-<title>{title}</title>
-<ViewTransitions />
-<style is:global>
-* {
-margin: 0;
-padding: 0;
-box-sizing: border-box;
-}
+    <head>
+        <meta charset="utf-8" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <meta name="viewport" content="width=device-width" />
+        <meta name="generator" content={Astro.generator} />
+        <title>{title}</title>
+        <ClientRouter />
+        <style is:global>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
 
-html {
-background-color: #0d1117;
-color: #c9d1d9;
-}
+            html {
+                background-color: #0d1117;
+                color: #c9d1d9;
+            }
 
-body {
-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-line-height: 1.6;
-color: #c9d1d9;
-background-color: #0d1117;
-}
+            body {
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    "Helvetica Neue", Arial, sans-serif;
+                line-height: 1.6;
+                color: #c9d1d9;
+                background-color: #0d1117;
+            }
 
-nav {
-background-color: #161b22;
-padding: 1rem 0;
-border-bottom: 1px solid #30363d;
-}
+            nav {
+                background-color: #161b22;
+                padding: 1rem 0;
+                border-bottom: 1px solid #30363d;
+            }
 
-nav ul {
-list-style: none;
-display: flex;
-gap: 2rem;
-max-width: 1200px;
-margin: 0 auto;
-padding: 0 1rem;
-}
+            nav ul {
+                justify-content: center;
+                text-align: center;
+                list-style: none;
+                display: flex;
+                gap: 4rem;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 0 1rem;
+            }
 
-nav a {
-text-decoration: none;
-color: #c9d1d9;
-font-weight: 500;
-transition: color 0.2s;
-}
+            nav a {
+		        color: var(--nav-color, #79c0ff);
+                filter: brightness(0.75);
+                text-decoration: none;
+                font-weight: 500;
+                transition: color 0.2s;
+            }
 
-nav a:hover,
-nav a.active {
-color: #58a6ff;
-}
+            nav a:hover,
+            nav a.active {
+		        color: var(--nav-color, #79c0ff);
+                filter: brightness(1);
+            }
 
-main {
-max-width: 1200px;
-margin: 0 auto;
-padding: 2rem 1rem;
-}
+            main {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 2rem 1rem;
+            }
 
-footer {
-margin-top: 4rem;
-padding: 2rem 1rem;
-background-color: #161b22;
-text-align: center;
-color: #8b949e;
-font-size: 0.9rem;
-border-top: 1px solid #30363d;
-}
+            footer {
+                margin-top: 4rem;
+                padding: 2rem 1rem;
+                background-color: #161b22;
+                text-align: center;
+                color: #8b949e;
+                font-size: 0.9rem;
+                border-top: 1px solid #30363d;
+            }
 
-a {
-color: #58a6ff;
-text-decoration: none;
-transition: color 0.2s;
-}
+            a {
+                color: #58a6ff;
+                text-decoration: none;
+                transition: color 0.2s;
+            }
 
-a:hover {
-color: #79c0ff;
-}
+            a:hover {
+                color: #79c0ff;
+            }
 
-h1, h2, h3, h4, h5, h6 {
-color: #f0f6fc;
-}
-</style>
-</head>
-<body>
-<nav>
-<ul>
-<li><a href="/">Home</a></li>
-<li><a href="/posts">Posts</a></li>
-<li><a href="/about">About</a></li>
-</ul>
-</nav>
-<main>
-<slot />
-</main>
-<footer>
-<p>&copy; 2025 My Blog. All rights reserved.</p>
-</footer>
-</body>
+            h1,
+            h2,
+            h3,
+            h4,
+            h5,
+            h6 {
+                color: #f0f6fc;
+            }
+        </style>
+    </head>
+    <body>
+        <nav>
+            <ul>
+                <li><a href="/" style="--nav-color: #00ff08;">Home</a></li>
+                <li><a href="/posts" style="--nav-color: #0290dd;">Posts</a></li>
+                <li><a href="/about" style="--nav-color: #ffff09;">About</a></li>
+            </ul>
+        </nav>
+        <main>
+            <slot />
+        </main>
+        <footer>
+            <p>&copy; I'm not a lawyer. Nothing here is copyrighted.</p>
+        </footer>
+    </body>
 </html>

@@ -1,42 +1,75 @@
 ---
 import Layout from "../layouts/Layout.astro";
 
+//todo- make a most viewed posts suggestion!
+
 // Find latest post by inspecting the directory structure under src/content/posts
 // We pick the highest year directory, then highest month directory inside it,
 // then choose the newest post by frontmatter `date` inside that folder.
-const modules = import.meta.glob("../content/posts/**/*.md", {
+const modules = import.meta.glob("../content/posts/**/*.mdx", {
 	eager: true,
 }) as Record<string, any>;
-const allPosts = Object.entries(modules).map(([path, mod]) => {
-	const fm = mod.frontmatter || {};
-	const parts = path.split("/");
-	const filename = parts[parts.length - 1];
-	const year = Number(parts[parts.length - 3]) || 0;
-	const month = Number(parts[parts.length - 2]) || 0;
-	const id = fm.id || filename.replace(/\.md$/, "");
-	return { id, fm, path, year, month };
-});
 
-let latestPost = null;
-if (allPosts.length > 0) {
-	const latestYear = Math.max(...allPosts.map((p) => p.year));
-	const inYear = allPosts.filter((p) => p.year === latestYear);
-	const latestMonth = Math.max(...inYear.map((p) => p.month));
-	const inMonth = inYear.filter((p) => p.month === latestMonth);
+type PostMeta = {
+  id: string;
+  title: string;
+  date: string;
+};
 
-	inMonth.sort(
-		(a, b) =>
-			new Date(b.fm.date || "1970-01-01").getTime() -
-			new Date(a.fm.date || "1970-01-01").getTime(),
-	);
-	const lp = inMonth[0];
-	if (lp)
-		latestPost = {
-			id: lp.id,
-			title: lp.fm.title || lp.id,
-			date: lp.fm.date || "",
-		};
+function getLatestByTag(tag: string): PostMeta | null {
+  const allPosts = Object.entries(modules).map(([path, mod]) => {
+    const fm = mod.frontmatter || {};
+    const parts = path.split("/");
+    const filename = parts[parts.length - 1];
+
+    const year = Number(parts[parts.length - 3]) || 0;
+    const month = Number(parts[parts.length - 2]) || 0;
+    const id = fm.id || filename.replace(/\.mdx$/, "");
+
+    return {
+      id,
+      fm,
+      path,
+      year,
+      month,
+      tags: fm.tags || [],
+    };
+  });
+
+  // 1. Filter by tag
+  const taggedPosts = allPosts.filter((p) =>
+    Array.isArray(p.tags) && p.tags.includes(tag)
+  );
+
+  if (taggedPosts.length === 0) return null;
+
+  // 2. Latest year
+  const latestYear = Math.max(...taggedPosts.map((p) => p.year));
+  const inYear = taggedPosts.filter((p) => p.year === latestYear);
+
+  // 3. Latest month
+  const latestMonth = Math.max(...inYear.map((p) => p.month));
+  const inMonth = inYear.filter((p) => p.month === latestMonth);
+
+  // 4. Sort by frontmatter date
+  inMonth.sort(
+    (a, b) =>
+      new Date(b.fm.date || "1970-01-01").getTime() -
+      new Date(a.fm.date || "1970-01-01").getTime()
+  );
+
+  const latest = inMonth[0];
+  if (!latest) return null;
+
+  return {
+    id: latest.id,
+    title: latest.fm.title || latest.id,
+    date: latest.fm.date || "",
+  };
 }
+
+const latestBlog = getLatestByTag("blog");
+const latestProject = getLatestByTag("project");
 ---
 
 <Layout title="Home | My Blog">
@@ -51,7 +84,21 @@ if (allPosts.length > 0) {
 		});
 	</script>
 
+	<div class = "dynamic-hello">
+
+
+	</div>
+
 	<div class="hero">
+		<h1 class="dynamic-hello">
+			<span id="typed-text"></span>
+			<span class="cursor">|</span>
+		</h1>
+
+		<button class="scroll-button" id="scroll-next">
+			↓ Explore
+		</button>
+
 		<div class="hero-left">
 			<div class="card-widget" tabindex="0" aria-label="Hero image cards">
 				<div class="card card--back">
@@ -65,18 +112,32 @@ if (allPosts.length > 0) {
 
 		<div class="hero-right">
 			<p>
-				Hi! My name is Andy, developer, history nerd, and aspiring
+				My name is Andy, developer, history nerd, and aspiring
 				human.
 				<br /><br />
-				I like building <a class="hero-link" href="/posts?tags=projects"
+				I like building <a
+					class="hero-link" 
+					style="--hero-link-color: #00ff08;"
+					href="/posts?tags=projects"
 					>wearable tech</a
 				> and thinking about the <a
 					class="hero-link"
+					style="--hero-link-color: #0290dd;"
 					href="/posts?tags=blog">past</a
 				>.
 				<br /><br />
+				You can read about that in my <a
+					class="hero-link"
+					style="--hero-link-color: #ffff09;"
+					href="/posts"
+					>posts</a
+				>.
+				<br /><br />
 				To learn more about myself and this website, see the <a
-					href="/about">About</a
+					class="hero-link"
+					style="--hero-link-color: #8e7745;"
+					href="/about"
+					>about</a
 				> page.
 			</p>
 		</div>
@@ -88,23 +149,29 @@ if (allPosts.length > 0) {
 		<div class="featured-grid">
 			<a
 				class="feature-card"
-				href={latestPost ? `/post/${latestPost.id}` : "/posts"}
+				href={latestBlog ? `/post/${latestBlog.id}` : "/posts"}
 			>
-				<h3>Latest Post</h3>
+				<h3>Latest Blog</h3>
 				<p class="muted">
-					{latestPost ? latestPost.title : "No posts yet"}
+					{latestBlog ? latestBlog.title : "No posts yet"}
 				</p>
 			</a>
 
-			<a class="feature-card" href="/posts?tags=blog">
-				<h3>Blog Posts</h3>
-				<p class="muted">View posts tagged "blog"</p>
+			<a
+				class="feature-card"
+				href={latestProject ? `/post/${latestProject.id}` : "/posts"}
+			>
+				<h3>Latest Project</h3>
+				<p class="muted">
+					{latestProject ? latestProject.title : "No projects yet"}
+				</p>
 			</a>
 
-			<a class="feature-card" href="/posts?tags=projects">
+			<!-- most viewed project -->
+			<!-- <a class="feature-card" href="/posts?tags=projects">
 				<h3>Projects</h3>
 				<p class="muted">View posts tagged "projects"</p>
-			</a>
+			</a> -->
 		</div>
 	</section>
 </Layout>
@@ -144,12 +211,14 @@ if (allPosts.length > 0) {
 
 	.hero-link {
 		position: relative;
-		color: #58a6ff;
+		top: 8px;
+		color: var(--hero-link-color, #58a6ff);
 		font-weight: 600;
 		text-decoration: none;
 		overflow: hidden;
 		display: inline-block;
 	}
+
 
 	.hero-link::before {
 		content: "";
@@ -172,10 +241,33 @@ if (allPosts.length > 0) {
 	}
 
 	.hero-link:hover {
-		color: #79c0ff;
+		color: var(--hero-link-color, #79c0ff);
 		text-decoration: underline;
 		text-decoration-thickness: 2px;
 		text-underline-offset: 4px;
+	}
+
+	
+	.dynamic-hello {
+	font-size: clamp(3rem, 8vw, 6rem);
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	}
+
+	.cursor {
+	animation: blink 1s step-end infinite;
+	}
+
+	@keyframes blink {
+	50% { opacity: 0; }
+	}
+
+	.scroll-button {
+	font-size: 1rem;
+	padding: 0.75rem 1.5rem;
+	border-radius: 999px;
+	border: none;
+	cursor: pointer;
 	}
 
 	.cta-button {
@@ -296,3 +388,42 @@ if (allPosts.length > 0) {
 		font-size: 0.95rem;
 	}
 </style>
+
+<script is:inline>
+  const words = [
+    "Hello",
+    "你好",
+    "こんにちは",
+    "안녕하세요",
+    "Bonjour",
+    "Hola",
+    "Ciao"
+  ];
+
+  const el = document.getElementById("typed-text");
+
+  let wordIndex = 0;
+  let charIndex = 0;
+  let deleting = false;
+
+  function typeLoop() {
+    const word = words[wordIndex];
+
+    if (!deleting) {
+      el.textContent = word.slice(0, charIndex++);
+      if (charIndex > word.length) {
+        setTimeout(() => deleting = true, 1200);
+      }
+    } else {
+      el.textContent = word.slice(0, charIndex--);
+      if (charIndex === 0) {
+        deleting = false;
+        wordIndex = (wordIndex + 1) % words.length;
+      }
+    }
+
+    setTimeout(typeLoop, deleting ? 60 : 100);
+  }
+
+  typeLoop();
+</script>

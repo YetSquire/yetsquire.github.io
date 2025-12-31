@@ -4,6 +4,7 @@ import PostCard from "../components/PostCard.astro";
 
 //TODO- load only a limited number of posts for performance
 //TODO- keep posts that are still relevant around
+//TODO- add filter by date
 const numberOfPostsToLoad = 100;
 
 // Load all markdown post files from the content directory
@@ -90,7 +91,7 @@ const sortedPosts = filteredPosts.sort(
 		document.addEventListener("astro:page-load", initPostsFilter);
 	</script>
 
-	<h1>Blog Posts</h1>
+	<h1>Posts</h1>
 
 	<div class="filters">
 		<h3>Filter by Tags:</h3>
@@ -135,14 +136,13 @@ const sortedPosts = filteredPosts.sort(
 
 <style>
 	h1 {
-		margin-bottom: 2rem;
+		margin-bottom: 1rem;
 	}
 
 	.filters {
-		background-color: #f9f9f9;
-		padding: 1.5rem;
-		border-radius: 8px;
-		margin-bottom: 2rem;
+		padding: 0.5rem;
+		border-radius: 4px;
+		margin-bottom: 0.5rem;
 	}
 
 	.filters h3 {
@@ -179,7 +179,8 @@ const sortedPosts = filteredPosts.sort(
 	}
 
 	.posts-count {
-		margin-bottom: 1.5rem;
+		margin: 0.5rem;
+		margin-bottom: 2rem;
 		color: #666;
 		font-size: 0.95rem;
 	}
