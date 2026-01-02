@@ -4,95 +4,114 @@ function getInitialSelectedTagsFromUrl() {
 	return params.getAll("tags");
 }
 
+
 export function initPostsFilter() {
-	// DOM lookups MUST happen inside init
-	const postListEl = document.getElementById("posts-list");
-	if (!postListEl) return;
-	
-	const tagButtons = Array.from(document.querySelectorAll(".filter-tag"));
-	const allBtn = document.getElementById("tag-all");
-	const postsCountEl = document.querySelector(".posts-count p");
+  const tryInit = () => {
+    const postListEl = document.getElementById("posts-list");
+    if (!postListEl) return false;
 
-	const initialSelectedTags = getInitialSelectedTagsFromUrl();
-	const currentSelectedTags = new Set(initialSelectedTags);
+    const tagButtons = Array.from(
+      document.querySelectorAll<HTMLButtonElement>(".filter-tag")
+    );
+    const allBtn = document.getElementById("tag-all");
+    const postsCountEl = document.querySelector(".posts-count p");
 
-	function getPostCards() {
-		if (postListEl === null) return [];
-		return Array.from(postListEl.querySelectorAll(".post-card"));
-	}
+    const initialSelectedTags = getInitialSelectedTagsFromUrl();
+    const currentSelectedTags = new Set(initialSelectedTags);
 
-	function updateButtonStates() {
-		tagButtons.forEach((btn) => {
-			const tag = btn.getAttribute("data-tag");
-			if (tag) {
-				btn.classList.toggle("active", currentSelectedTags.has(tag));
-			} else if (btn.id === "tag-all") {
-				btn.classList.toggle("active", currentSelectedTags.size === 0);
-			}
-		});
-	}
+    function getPostCards() {
+      return Array.from(
+        (postListEl as HTMLElement).querySelectorAll<HTMLElement>(".post-card")
+      );
+    }
 
-	function renderPosts(updateUrl = true) {
-		const cards = getPostCards();
-		let visibleCount = 0;
+    function updateButtonStates() {
+      tagButtons.forEach((btn) => {
+        const tag = btn.getAttribute("data-tag");
+        if (tag) {
+          btn.classList.toggle("active", currentSelectedTags.has(tag));
+        } else if (btn.id === "tag-all") {
+          btn.classList.toggle("active", currentSelectedTags.size === 0);
+        }
+      });
+    }
 
-		cards.forEach((card) => {
-			const trueCard = card as HTMLElement;
-			const tags = (trueCard.dataset.tags || "")
-				.split(",")
-				.map((t) => t.trim())
-				.filter(Boolean);
+    function renderPosts(updateUrl = true) {
+      let visibleCount = 0;
 
-			const matches =
-				currentSelectedTags.size === 0 ||
-				tags.some((t) => currentSelectedTags.has(t));
+      getPostCards().forEach((card) => {
+        const tags = (card.dataset.tags || "")
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean);
 
-			trueCard.style.display = matches ? "" : "none";
-			if (matches) visibleCount++;
-		});
+        const matches =
+          currentSelectedTags.size === 0 ||
+          tags.some((t) => currentSelectedTags.has(t));
 
-		if (postsCountEl) {
-			postsCountEl.textContent = `Showing ${visibleCount} post${visibleCount !== 1 ? "s" : ""
-				}`;
-		}
+        card.style.display = matches ? "" : "none";
+        if (matches) visibleCount++;
+      });
 
-		if (updateUrl) {
-			const queryParams = Array.from(currentSelectedTags)
-				.map((t) => `tags=${encodeURIComponent(t)}`)
-				.join("&");
+      if (postsCountEl) {
+        postsCountEl.textContent = `Showing ${visibleCount} post${
+          visibleCount !== 1 ? "s" : ""
+        }`;
+      }
 
-			const newUrl = queryParams ? `/posts?${queryParams}` : "/posts";
-			window.history.replaceState(null, "", newUrl);
-		}
-	}
+      if (updateUrl) {
+        const queryParams = Array.from(currentSelectedTags)
+          .map((t) => `tags=${encodeURIComponent(t)}`)
+          .join("&");
 
-	// Event wiring
-	if (allBtn) {
-		allBtn.addEventListener("click", (e) => {
-			e.preventDefault();
-			currentSelectedTags.clear();
-			updateButtonStates();
-			renderPosts(true);
-		});
-	}
+        window.history.replaceState(
+          null,
+          "",
+          queryParams ? `/posts?${queryParams}` : "/posts"
+        );
+      }
+    }
 
-	tagButtons.forEach((btn) => {
-		const tag = btn.getAttribute("data-tag");
-		if (!tag) return;
+    // Event wiring
+    allBtn?.addEventListener("click", (e) => {
+      e.preventDefault();
+      currentSelectedTags.clear();
+      updateButtonStates();
+      renderPosts(true);
+    });
 
-		btn.addEventListener("click", (e) => {
-			e.preventDefault();
-			if (currentSelectedTags.has(tag)) {
-				currentSelectedTags.delete(tag);
-			} else {
-				currentSelectedTags.add(tag);
-			}
-			updateButtonStates();
-			renderPosts(true);
-		});
-	});
+    tagButtons.forEach((btn) => {
+      const tag = btn.getAttribute("data-tag");
+      if (!tag) return;
 
-	// Initial render
-	updateButtonStates();
-	renderPosts(false);
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        currentSelectedTags.has(tag)
+          ? currentSelectedTags.delete(tag)
+          : currentSelectedTags.add(tag);
+
+        updateButtonStates();
+        renderPosts(true);
+      });
+    });
+
+    updateButtonStates();
+    renderPosts(false);
+
+    return true;
+  };
+
+  // Try immediately
+  if (tryInit()) return;
+
+  // Otherwise, wait exactly once for DOM readiness
+  if (document.readyState === "loading") {
+    document.addEventListener(
+      "DOMContentLoaded",
+      () => {
+        tryInit();
+      },
+      { once: true }
+    );
+  }
 }
