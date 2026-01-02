@@ -1,65 +1,42 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { TEXT_COLORS } from "../config/site";
+
+// Add descriptors to the buttons
 ---
 
-<!-- MOVE CONTACT BUTTONS TO THE BOTTOM -->
 <Layout title="About | My Blog">
 	<!-- ugly styling unfortunately -->
 	<article class="about-content" style={`--h2-color: ${TEXT_COLORS.About};`}>
-		<div class="about-hero">
-			<div class="hero-left">
-				<img src="images/babel.jpg" alt="babel" class="hero-image" />
-			</div>
-
-			<div class="hero-right">
-				<h2>Who I Am</h2>
-				<p>
-					The author of this website is Andy Yao. I'm a software dev
-					by trade, and studied at the University of Michigan.
-
-					<br /><br />
-					I tend to use the tower of Babel as a profile picture.
-				</p>
-			</div>
-		</div>
-
 		<section>
-			<h2>What I Do</h2>
-			<p>
-				I'm currently a software developer at Mira, a smart glasses
-				startup based in California.
-				<br />
-				As mentioned, I'm interested in extended reality, metacognition, and
-				history.
-				<br />
-				In my free time, I tinker with various personal projects, read history/fantasy/sci-fi,
-				and run.
-				<br />
-				Also, did you know I happen to have a blog? :)
-			</p>
-		</section>
+			<div class="about-hero">
+				<div class="hero-left">
+					<img
+						src="images/babel.jpg"
+						alt="babel"
+						class="hero-image"
+					/>
+				</div>
 
-		<section>
-			<h2>Why This Blog?</h2>
-			<p>
-				This blog serves as a portfolio of my work and a way to document
-				my journey in tech. I hope to share my experiences in such a way
-				that others can learn from them.
-				<br /><br />
-				For more detail, check out blog post 0, <a
-					class="special-link"
-					style={`--special-link-color: ${TEXT_COLORS.Blog};`}
-					href="/post/1">Logistics</a
-				>.
-			</p>
+				<div class="hero-right">
+					<h2>Who I Am</h2>
+					<p>
+						The author of this website is Andy Yao. I'm a software
+						dev by trade, and studied at the University of Michigan.
+
+						<br /><br />
+						I tend to use the tower of Babel as a profile picture.
+					</p>
+				</div>
+			</div>
 		</section>
 
 		<section>
 			<h2>Get In Touch</h2>
 			<p>
-				You're pretty much guaranteed to reach me via email: andyyao15
-				[at] gmail [dot] com
+				The best way to reach me is via email: andyyao15 [at] gmail [dot] com
+				<br>
+				You might also find the below information useful
 			</p>
 
 			<div class="social-buttons" aria-label="Social links">
@@ -98,10 +75,43 @@ import { TEXT_COLORS } from "../config/site";
 						Andy's note- resume icon by <a
 							href="https://www.flaticon.com/free-icons/resume"
 							target="_blank"
-							rel="noopener">Freepik</a>
+							rel="noopener">Freepik</a
+						>
 					</div>
 				</div>
 			</div>
+		</section>
+
+		<section>
+			<h2>What I Do</h2>
+			<p>
+				I'm currently a software developer at Mira, a smart glasses
+				startup based in California.
+				<br />
+				My interests include extended reality, metacognition, and
+				history.
+				<br />
+				In my free time, I tinker with various personal projects, read history/fantasy/sci-fi,
+				and run.
+				<br />
+				<br />
+				Also, did you know I happen to have a blog? :)
+			</p>
+		</section>
+
+		<section>
+			<h2>Why This Blog?</h2>
+			<p>
+				This blog serves as a portfolio of my work and a way to document
+				my journey in life. I hope to share my experiences in such a way
+				that others can learn from them.
+				<br /><br />
+				For more detail, check out blog post 0, <a
+					class="special-link"
+					style={`--special-link-color: ${TEXT_COLORS.Blog};`}
+					href="/post/1">Logistics</a
+				>.
+			</p>
 		</section>
 	</article>
 </Layout>
@@ -188,20 +198,20 @@ import { TEXT_COLORS } from "../config/site";
 	/* Social buttons */
 	.social-buttons {
 		display: flex;
-		gap: 10rem;
+		gap: 5rem;
 		justify-content: center;
 		margin-top: 2rem;
 	}
 
 	.icon-btn {
-		flex: 0 0 150px;
+		flex: 0 0 100px;
 		overflow: hidden;
 		background-color: #ffffff;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 150px;
-		height: 150px;
+		width: 100px;
+		height: 100px;
 		border-radius: 16px;
 		text-decoration: none;
 		transition:
