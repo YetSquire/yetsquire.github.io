@@ -38,9 +38,23 @@ const { title } = Astro.props;
             }
 
             nav {
+                position: sticky;
+                top: 0;
+                z-index: 1000;
+
                 background-color: #161b22;
                 padding: 1rem 0;
                 border-bottom: 1px solid #30363d;
+
+                transition:
+                    transform 0.25s ease,
+                    opacity 0.25s ease;
+            }
+
+            nav.nav-hidden {
+                transform: translateY(-100%);
+                opacity: 0;
+                pointer-events: none;
             }
 
             nav ul {
@@ -55,7 +69,7 @@ const { title } = Astro.props;
             }
 
             nav a {
-		        color: var(--nav-color, #79c0ff);
+                color: var(--nav-color, #79c0ff);
                 filter: brightness(0.75);
                 text-decoration: none;
                 font-weight: 500;
@@ -64,7 +78,7 @@ const { title } = Astro.props;
 
             nav a:hover,
             nav a.active {
-		        color: var(--nav-color, #79c0ff);
+                color: var(--nav-color, #79c0ff);
                 filter: brightness(1);
             }
 
@@ -107,9 +121,13 @@ const { title } = Astro.props;
     <body>
         <nav>
             <ul>
-                <li><a href="/" style="--nav-color: #00ff08;">Home</a></li>
-                <li><a href="/posts" style="--nav-color: #0290dd;">Posts</a></li>
-                <li><a href="/about" style="--nav-color: #ffff09;">About</a></li>
+                <li><a href="/#introduction" style="--nav-color: #00ff08;">Home</a></li>
+                <li>
+                    <a href="/posts" style="--nav-color: #0290dd;">Posts</a>
+                </li>
+                <li>
+                    <a href="/about" style="--nav-color: #ffff09;">About</a>
+                </li>
             </ul>
         </nav>
         <main>
@@ -120,3 +138,23 @@ const { title } = Astro.props;
         </footer>
     </body>
 </html>
+
+<!-- <script is:inline>
+    const nav = document.querySelector("nav");
+
+    const observer = new IntersectionObserver(
+        (entries) => {
+            const isHiddenSectionVisible = entries.some(
+                (e) => e.isIntersecting,
+            );
+            nav?.classList.toggle("nav-hidden", isHiddenSectionVisible);
+        },
+        {
+            threshold: 0.3,
+        },
+    );
+
+    document
+        .querySelectorAll("[data-hide-nav]")
+        .forEach((el) => observer.observe(el));
+</script> -->

@@ -1,7 +1,8 @@
 ---
 import Layout from "../layouts/Layout.astro";
 
-//todo- make a most viewed posts suggestion!
+//todo- optimize typeloop
+//todo- make a most viewed posts suggestion! along with the other two suggestions
 
 // Find latest post by inspecting the directory structure under src/content/posts
 // We pick the highest year directory, then highest month directory inside it,
@@ -11,61 +12,61 @@ const modules = import.meta.glob("../content/posts/**/*.mdx", {
 }) as Record<string, any>;
 
 type PostMeta = {
-  id: string;
-  title: string;
-  date: string;
+	id: string;
+	title: string;
+	date: string;
 };
 
 function getLatestByTag(tag: string): PostMeta | null {
-  const allPosts = Object.entries(modules).map(([path, mod]) => {
-    const fm = mod.frontmatter || {};
-    const parts = path.split("/");
-    const filename = parts[parts.length - 1];
+	const allPosts = Object.entries(modules).map(([path, mod]) => {
+		const fm = mod.frontmatter || {};
+		const parts = path.split("/");
+		const filename = parts[parts.length - 1];
 
-    const year = Number(parts[parts.length - 3]) || 0;
-    const month = Number(parts[parts.length - 2]) || 0;
-    const id = fm.id || filename.replace(/\.mdx$/, "");
+		const year = Number(parts[parts.length - 3]) || 0;
+		const month = Number(parts[parts.length - 2]) || 0;
+		const id = fm.id || filename.replace(/\.mdx$/, "");
 
-    return {
-      id,
-      fm,
-      path,
-      year,
-      month,
-      tags: fm.tags || [],
-    };
-  });
+		return {
+			id,
+			fm,
+			path,
+			year,
+			month,
+			tags: fm.tags || [],
+		};
+	});
 
-  // 1. Filter by tag
-  const taggedPosts = allPosts.filter((p) =>
-    Array.isArray(p.tags) && p.tags.includes(tag)
-  );
+	// 1. Filter by tag
+	const taggedPosts = allPosts.filter(
+		(p) => Array.isArray(p.tags) && p.tags.includes(tag),
+	);
 
-  if (taggedPosts.length === 0) return null;
+	if (taggedPosts.length === 0) return null;
 
-  // 2. Latest year
-  const latestYear = Math.max(...taggedPosts.map((p) => p.year));
-  const inYear = taggedPosts.filter((p) => p.year === latestYear);
+	// 2. Latest year
+	const latestYear = Math.max(...taggedPosts.map((p) => p.year));
+	const inYear = taggedPosts.filter((p) => p.year === latestYear);
 
-  // 3. Latest month
-  const latestMonth = Math.max(...inYear.map((p) => p.month));
-  const inMonth = inYear.filter((p) => p.month === latestMonth);
+	// 3. Latest month
+	const latestMonth = Math.max(...inYear.map((p) => p.month));
+	const inMonth = inYear.filter((p) => p.month === latestMonth);
 
-  // 4. Sort by frontmatter date
-  inMonth.sort(
-    (a, b) =>
-      new Date(b.fm.date || "1970-01-01").getTime() -
-      new Date(a.fm.date || "1970-01-01").getTime()
-  );
+	// 4. Sort by frontmatter date
+	inMonth.sort(
+		(a, b) =>
+			new Date(b.fm.date || "1970-01-01").getTime() -
+			new Date(a.fm.date || "1970-01-01").getTime(),
+	);
 
-  const latest = inMonth[0];
-  if (!latest) return null;
+	const latest = inMonth[0];
+	if (!latest) return null;
 
-  return {
-    id: latest.id,
-    title: latest.fm.title || latest.id,
-    date: latest.fm.date || "",
-  };
+	return {
+		id: latest.id,
+		title: latest.fm.title || latest.id,
+		date: latest.fm.date || "",
+	};
 }
 
 const latestBlog = getLatestByTag("blog");
@@ -73,74 +74,65 @@ const latestProject = getLatestByTag("project");
 ---
 
 <Layout title="Home | My Blog">
-	<script is:inline>
-		document.addEventListener("astro:page-load", () => {
-			const widget = document.querySelector(".card-widget");
-			if (!widget) return;
-
-			widget.addEventListener("click", () => {
-				widget.classList.toggle("is-swapped");
-			});
-		});
-	</script>
-
-	<div class = "dynamic-hello">
-
-
-	</div>
 
 	<div class="hero">
-		<h1 class="dynamic-hello">
-			<span id="typed-text"></span>
-			<span class="cursor">|</span>
-		</h1>
+		<section class="hello-container">
+			<!-- data-hide-nav -->
+			<h1 class="dynamic-hello">
+				<span>
+					<span id="typed-text"></span>
+					<span class="cursor">|</span>
+				</span>
+			</h1>
 
-		<button class="scroll-button" id="scroll-next">
-			↓ Explore
-		</button>
+			<button class="scroll-button" id="scroll-next"> ↓ </button>
+		</section>
 
-		<div class="hero-left">
-			<div class="card-widget" tabindex="0" aria-label="Hero image cards">
-				<div class="card card--back">
-					<img src="/images/babel.jpg" alt="back" />
-				</div>
-				<div class="card card--front">
-					<img src="/images/test.png" alt="front" />
+		<section class="introduction" id="introduction">
+			<div class="card-container">
+				<div
+					class="card-widget"
+					tabindex="0"
+					aria-label="Hero image cards"
+				>
+					<div class="card card--back">
+						<img src="/images/babel.jpg" alt="back" />
+					</div>
+					<div class="card card--front">
+						<img src="/images/test.png" alt="front" />
+					</div>
 				</div>
 			</div>
-		</div>
 
-		<div class="hero-right">
-			<p>
-				My name is Andy, developer, history nerd, and aspiring
-				human.
-				<br /><br />
-				I like building <a
-					class="hero-link" 
-					style="--hero-link-color: #00ff08;"
-					href="/posts?tags=projects"
-					>wearable tech</a
-				> and thinking about the <a
-					class="hero-link"
-					style="--hero-link-color: #0290dd;"
-					href="/posts?tags=blog">past</a
-				>.
-				<br /><br />
-				You can read about that in my <a
-					class="hero-link"
-					style="--hero-link-color: #ffff09;"
-					href="/posts"
-					>posts</a
-				>.
-				<br /><br />
-				To learn more about myself and this website, see the <a
-					class="hero-link"
-					style="--hero-link-color: #8e7745;"
-					href="/about"
-					>about</a
-				> page.
-			</p>
-		</div>
+			<div class="intro-text">
+				<p>
+					My name is Andy, developer, history nerd, and aspiring
+					human.
+					<br /><br />
+					I like building <a
+						class="intro-link"
+						style="--intro-link-color: #00ff08;"
+						href="/posts?tags=projects">wearable tech</a
+					> and thinking about the <a
+						class="intro-link"
+						style="--intro-link-color: #0290dd;"
+						href="/posts?tags=blog">past</a
+					>.
+					<br /><br />
+					You can read about that in my <a
+						class="intro-link"
+						style="--intro-link-color: #ffff09;"
+						href="/posts">posts</a
+					>.
+					<br /><br />
+					To learn more about myself and this website, see the <a
+						class="intro-link"
+						style="--intro-link-color: #8e7745;"
+						href="/about">about</a
+					> page.
+				</p>
+			</div>
+		</section>
 	</div>
 
 	<section class="featured">
@@ -178,8 +170,8 @@ const latestProject = getLatestByTag("project");
 
 <style>
 	.hero {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
+		display: flex;
+		flex-direction: column;
 		gap: 2rem;
 		align-items: center;
 		padding: 3rem 0;
@@ -187,7 +179,7 @@ const latestProject = getLatestByTag("project");
 		margin-bottom: 2rem;
 	}
 
-	.hero-left {
+	.card-container {
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -201,26 +193,39 @@ const latestProject = getLatestByTag("project");
 		object-fit: cover;
 	}
 
-	.hero-right p {
+	.hello-container {
+		min-height: 100svh;
+	}
+
+	.introduction {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		min-height: 100svh;
+		gap: 6rem;
+	}
+
+	.intro-text p {
 		font-size: 1.15rem;
 		color: #8b949e;
 		margin-bottom: 1.25rem;
 		line-height: 1.6;
 		text-align: left;
+		justify-content: center;
 	}
 
-	.hero-link {
+	.intro-link {
 		position: relative;
 		top: 8px;
-		color: var(--hero-link-color, #58a6ff);
+		color: var(--intro-link-color, #58a6ff);
 		font-weight: 600;
 		text-decoration: none;
 		overflow: hidden;
 		display: inline-block;
 	}
 
-
-	.hero-link::before {
+	.intro-link::before {
 		content: "";
 		position: absolute;
 		top: 0;
@@ -236,38 +241,49 @@ const latestProject = getLatestByTag("project");
 		transition: left 0.5s ease-in-out;
 	}
 
-	.hero-link:hover::before {
+	.intro-link:hover::before {
 		left: 100%;
 	}
 
-	.hero-link:hover {
-		color: var(--hero-link-color, #79c0ff);
+	.intro-link:hover {
+		color: var(--intro-link-color, #79c0ff);
 		text-decoration: underline;
 		text-decoration-thickness: 2px;
 		text-underline-offset: 4px;
 	}
 
-	
 	.dynamic-hello {
-	font-size: clamp(3rem, 8vw, 6rem);
-	font-weight: 700;
-	letter-spacing: -0.02em;
-	}
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
 
-	.cursor {
-	animation: blink 1s step-end infinite;
-	}
-
-	@keyframes blink {
-	50% { opacity: 0; }
+		font-size: clamp(3rem, 8vw, 6rem);
+		font-weight: 700;
+		letter-spacing: -0.02em;
 	}
 
 	.scroll-button {
-	font-size: 1rem;
-	padding: 0.75rem 1.5rem;
-	border-radius: 999px;
-	border: none;
-	cursor: pointer;
+		position: absolute;
+		top: calc(50% + 37.5svh);
+		left: 50%;
+		transform: translateX(-50%);
+
+		font-size: 1rem;
+		padding: 0.75rem 1.5rem;
+		border-radius: 999px;
+		border: none;
+		cursor: pointer;
+	}
+
+	.cursor {
+		animation: blink 1s step-end infinite;
+	}
+
+	@keyframes blink {
+		50% {
+			opacity: 0;
+		}
 	}
 
 	.cta-button {
@@ -390,40 +406,95 @@ const latestProject = getLatestByTag("project");
 </style>
 
 <script is:inline>
-  const words = [
-    "Hello",
-    "你好",
-    "こんにちは",
-    "안녕하세요",
-    "Bonjour",
-    "Hola",
-    "Ciao"
-  ];
 
-  const el = document.getElementById("typed-text");
+	document.addEventListener("astro:page-load", () => {
+		const widget = document.querySelector(".card-widget");
+		if (!widget) return;
 
-  let wordIndex = 0;
-  let charIndex = 0;
-  let deleting = false;
+		widget.addEventListener("click", () => {
+			widget.classList.toggle("is-swapped");
+		});
+	});
 
-  function typeLoop() {
-    const word = words[wordIndex];
+	function initHero() {
+		// Scroll button
+		const scrollBtn = document.getElementById("scroll-next");
+		scrollBtn?.addEventListener("click", () => {
+			const next = document.querySelector(".introduction");
+			next?.scrollIntoView({ behavior: "smooth", block: "start" });
+		});
 
-    if (!deleting) {
-      el.textContent = word.slice(0, charIndex++);
-      if (charIndex > word.length) {
-        setTimeout(() => deleting = true, 1200);
-      }
-    } else {
-      el.textContent = word.slice(0, charIndex--);
-      if (charIndex === 0) {
-        deleting = false;
-        wordIndex = (wordIndex + 1) % words.length;
-      }
-    }
+		// Typed text
+		const words = [
+			"Hello",
+			"👋😄",
+			"你好",
+			"こんにちは",
+			"안녕하세요",
+			"Bonjour",
+			"Hola",
+			"Ciao",
+			"Saluton",
+			"9jR°`N",
+			"4E 45 45 45 45 45 45 45 45 52 44",
+			"nuqneH",
+			"Congrats for waiting till the end",
+			"You found the easter egg!",
+			"If you email me, mention Pomegranates",
+			"Bye!",
+			// "Help",
+			// "Help me",
+			// "pLeASe",
+			// "itS cOmiNG",
+			// "iM slIPPiNg",
+			// "PLEA-"
+		];
 
-    setTimeout(typeLoop, deleting ? 60 : 100);
-  }
+		const el = document.getElementById("typed-text");
+		if (!el) return;
 
-  typeLoop();
+		let wordIndex = 0;
+		let charIndex = 0;
+		let deleting = false;
+
+		let colorStart = "#ffffff";
+		const colors = [
+			"#00ff08",
+			"#0290dd",
+			"#ffff09",
+			"#ff61a6",
+			"#ff7b72",
+			"#d2a8ff",
+		];
+
+		function typeLoop() {
+			const word = words[wordIndex];
+
+			if (!deleting) {
+				const chars = [...word];
+				el.textContent = chars.slice(0, charIndex++).join("");
+				if (charIndex === word.length) {
+					setTimeout(() => {
+						deleting = true;
+					}, 1200);
+				}
+			} else {
+				const chars = [...word];
+				el.textContent = chars.slice(0, charIndex--).join("");				
+				if (charIndex <= 0) {
+					deleting = false;
+					wordIndex = (wordIndex + 1) % words.length;
+					charIndex = 0;
+				}
+			}
+
+			setTimeout(typeLoop, deleting ? 60 : 100);
+		}
+
+		typeLoop();
+	}
+
+	// Run on first load and every client-side navigation
+	document.addEventListener("astro:page-load", initHero);
+
 </script>
