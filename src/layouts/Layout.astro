@@ -1,5 +1,6 @@
 ---
 import { ClientRouter } from "astro:transitions";
+import { TEXT_COLORS } from "../config/site";
 
 interface Props {
     title: string;
@@ -69,8 +70,7 @@ const { title } = Astro.props;
             }
 
             nav a {
-                color: var(--nav-color, #79c0ff);
-                filter: brightness(0.75);
+                color: var(--special-link-color);
                 text-decoration: none;
                 font-weight: 500;
                 transition: color 0.2s;
@@ -78,8 +78,6 @@ const { title } = Astro.props;
 
             nav a:hover,
             nav a.active {
-                color: var(--nav-color, #79c0ff);
-                filter: brightness(1);
             }
 
             main {
@@ -116,17 +114,79 @@ const { title } = Astro.props;
             h6 {
                 color: #f0f6fc;
             }
+
+            .special-link {
+                display: inline-flex;
+                align-items: center;
+                position: relative;
+                color: var(--special-link-color);
+                font-weight: 600;
+                text-decoration: none;
+                overflow: hidden;
+            }
+
+            .special-link::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(88, 166, 255, 0.3),
+                    transparent
+                );
+                transition: left 0.5s ease-in-out;
+            }
+
+            .special-link:hover::before {
+                left: 100%;
+            }
+
+            .special-link:hover {
+                color: var(--special-link-color);
+                text-decoration: underline;
+                text-decoration-thickness: 2px;
+                text-underline-offset: 4px;
+            }
         </style>
     </head>
     <body>
         <nav>
             <ul>
-                <li><a href="/#introduction" style="--nav-color: #00ff08;">Home</a></li>
                 <li>
-                    <a href="/posts" style="--nav-color: #0290dd;">Posts</a>
+                    <a
+                        href="/#introduction"
+                        class="special-link"
+                        style={`--special-link-color: ${TEXT_COLORS.Home};`}
+                        >Home</a
+                    >
                 </li>
                 <li>
-                    <a href="/about" style="--nav-color: #ffff09;">About</a>
+                    <a
+                        href="/posts?tags=blog"
+                        class="special-link"
+                        style={`--special-link-color: ${TEXT_COLORS.Blog};`}
+                        >Blog</a
+                    >
+                </li>
+                <li>
+                    <a
+                        href="/posts?tags=project"
+                        class="special-link"
+                        style={`--special-link-color: ${TEXT_COLORS.Project};`}
+                        >Project</a
+                    >
+                </li>
+                <li>
+                    <a
+                        href="/about"
+                        class="special-link"
+                        style={`--special-link-color: ${TEXT_COLORS.About};`}
+                        >About</a
+                    >
                 </li>
             </ul>
         </nav>

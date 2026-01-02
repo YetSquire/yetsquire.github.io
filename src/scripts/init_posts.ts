@@ -8,7 +8,7 @@ export function initPostsFilter() {
 	// DOM lookups MUST happen inside init
 	const postListEl = document.getElementById("posts-list");
 	if (!postListEl) return;
-
+	
 	const tagButtons = Array.from(document.querySelectorAll(".filter-tag"));
 	const allBtn = document.getElementById("tag-all");
 	const postsCountEl = document.querySelector(".posts-count p");

@@ -1,23 +1,25 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro";
+import { TEXT_COLORS } from "../config/site";
 ---
 
+<!-- MOVE CONTACT BUTTONS TO THE BOTTOM -->
 <Layout title="About | My Blog">
-	<article class="about-content">
+	<!-- ugly styling unfortunately -->
+	<article class="about-content" style={`--h2-color: ${TEXT_COLORS.About};`}>
 		<div class="about-hero">
 			<div class="hero-left">
 				<img src="images/babel.jpg" alt="babel" class="hero-image" />
 			</div>
 
 			<div class="hero-right">
-                <h1>About Me</h1>
-
 				<h2>Who I Am</h2>
 				<p>
-					The author of this website is Andy Yao. I'm a software dev by trade, and studied at the University of Michigan.
+					The author of this website is Andy Yao. I'm a software dev
+					by trade, and studied at the University of Michigan.
 
-                    <br><br>
-                    I tend to use the tower of Babel as a profile picture.
+					<br /><br />
+					I tend to use the tower of Babel as a profile picture.
 				</p>
 			</div>
 		</div>
@@ -25,49 +27,81 @@ import Layout from '../layouts/Layout.astro';
 		<section>
 			<h2>What I Do</h2>
 			<p>
-                I'm currently a software developer at Mira, a smart glasses startup based in California. 
-				<br>
-				As mentioned, I'm interested in extended reality, metacognition, and history.
-                <br>
-                In my free time, I tinker with various personal projects, read history/fantasy/sci-fi, and run. 
-                <br>
-                Also, did you know I happen to have a blog? :)
+				I'm currently a software developer at Mira, a smart glasses
+				startup based in California.
+				<br />
+				As mentioned, I'm interested in extended reality, metacognition, and
+				history.
+				<br />
+				In my free time, I tinker with various personal projects, read history/fantasy/sci-fi,
+				and run.
+				<br />
+				Also, did you know I happen to have a blog? :)
 			</p>
 		</section>
 
 		<section>
 			<h2>Why This Blog?</h2>
 			<p>
-				This blog serves as a portfolio of my work and a way to document my journey in tech.
-				I hope to share my experiences in such a way that others can learn from them.
-                <br><br>
-                For more detail, check out blog post 0, <a href="/post/1">Logistics</a>.
+				This blog serves as a portfolio of my work and a way to document
+				my journey in tech. I hope to share my experiences in such a way
+				that others can learn from them.
+				<br /><br />
+				For more detail, check out blog post 0, <a
+					class="special-link"
+					style={`--special-link-color: ${TEXT_COLORS.Blog};`}
+					href="/post/1">Logistics</a
+				>.
 			</p>
 		</section>
 
 		<section>
 			<h2>Get In Touch</h2>
 			<p>
-				You're pretty much guaranteed to reach me via email: andyyao15 [at] gmail [dot] com
+				You're pretty much guaranteed to reach me via email: andyyao15
+				[at] gmail [dot] com
 			</p>
 
 			<div class="social-buttons" aria-label="Social links">
-				<a class="icon-btn" href="https://github.com/YetSquire" target="_blank" rel="noopener" aria-label="GitHub">
+				<a
+					class="icon-btn"
+					href="https://github.com/YetSquire"
+					target="_blank"
+					rel="noopener"
+					aria-label="GitHub"
+				>
 					<img src="/images/about/github.png" alt="GitHub" />
 				</a>
 
-				<a class="icon-btn" href="https://www.linkedin.com/in/andy-yao-cs" target="_blank" rel="noopener" aria-label="LinkedIn">
+				<a
+					class="icon-btn"
+					href="https://www.linkedin.com/in/andy-yao-cs"
+					target="_blank"
+					rel="noopener"
+					aria-label="LinkedIn"
+				>
 					<img src="/images/about/linkedin.png" alt="LinkedIn" />
 				</a>
 
 				<div class="icon-resume-wrapper">
-					<a class="icon-btn" href="/resume.pdf" target="_blank" rel="noopener" aria-describedby="resume-attrib" aria-label="Resume">
+					<a
+						class="icon-btn"
+						href="/resume.pdf"
+						target="_blank"
+						rel="noopener"
+						aria-describedby="resume-attrib"
+						aria-label="Resume"
+					>
 						<img src="/images/about/resume.png" alt="Resume" />
 					</a>
-					<div id="resume-attrib" class="tooltip" role="tooltip">Andy's note- resume icon by <a href="https://www.flaticon.com/free-icons/resume" target="_blank" rel="noopener">Freepik</a></div>
+					<div id="resume-attrib" class="tooltip" role="tooltip">
+						Andy's note- resume icon by <a
+							href="https://www.flaticon.com/free-icons/resume"
+							target="_blank"
+							rel="noopener">Freepik</a>
+					</div>
 				</div>
 			</div>
-            
 		</section>
 	</article>
 </Layout>
@@ -89,12 +123,12 @@ import Layout from '../layouts/Layout.astro';
 
 	h2 {
 		margin-bottom: 1rem;
-		color: #0066cc;
+		color: var(--h2-color);
 	}
 
 	p {
 		line-height: 1.8;
-		color: #555;
+		color: #8c8c8c;
 		margin-bottom: 1rem;
 	}
 
@@ -160,8 +194,8 @@ import Layout from '../layouts/Layout.astro';
 	}
 
 	.icon-btn {
-		flex: 0 0 150px;   
-		overflow: hidden; 
+		flex: 0 0 150px;
+		overflow: hidden;
 		background-color: #ffffff;
 		display: inline-flex;
 		align-items: center;
@@ -170,8 +204,11 @@ import Layout from '../layouts/Layout.astro';
 		height: 150px;
 		border-radius: 16px;
 		text-decoration: none;
-		transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
-		box-shadow: 0 6px 14px rgba(12,18,22,0.06);
+		transition:
+			transform 160ms ease,
+			background 160ms ease,
+			box-shadow 160ms ease;
+		box-shadow: 0 6px 14px rgba(12, 18, 22, 0.06);
 	}
 
 	.icon-btn:hover,
@@ -180,18 +217,24 @@ import Layout from '../layouts/Layout.astro';
 		outline: none;
 	}
 
-    
+	.icon-btn img {
+		width: 105%;
+		height: 105%;
+		display: block;
+		object-fit: cover;
+	}
 
-	.icon-btn img { width: 105%; height: 105%; display:block; object-fit: cover;}
-
-	.icon-resume-wrapper { position: relative; display: inline-block; }
+	.icon-resume-wrapper {
+		position: relative;
+		display: inline-block;
+	}
 
 	/* Tooltip for resume attribution */
 	.tooltip {
 		position: absolute;
 		left: 50%;
 		transform: translateX(-50%) translateY(8px);
-		background: rgba(0,0,0,0.85);
+		background: rgba(0, 0, 0, 0.85);
 		color: white;
 		padding: 0.45rem 0.6rem;
 		border-radius: 6px;
@@ -199,7 +242,9 @@ import Layout from '../layouts/Layout.astro';
 		white-space: nowrap;
 		opacity: 0;
 		pointer-events: none;
-		transition: opacity 160ms ease, transform 160ms ease;
+		transition:
+			opacity 160ms ease,
+			transform 160ms ease;
 		z-index: 30;
 	}
 
@@ -210,26 +255,35 @@ import Layout from '../layouts/Layout.astro';
 		pointer-events: auto;
 	}
 
-	.tooltip a { color: #fff; text-decoration: underline; }
+	.tooltip a {
+		color: #fff;
+		text-decoration: underline;
+	}
 
 	@media (max-width: 480px) {
-		.social-buttons { flex-direction: column; align-items: center; }
+		.social-buttons {
+			flex-direction: column;
+			align-items: center;
+		}
 	}
 </style>
 
 <script>
-// When the user leaves the tab, blur any focused icon buttons so they are unfocused when returning.
-(function () {
-	document.addEventListener('visibilitychange', () => {
-		if (document.visibilityState === 'hidden') {
-			document.querySelectorAll('.icon-btn').forEach((btn) => {
-						try { if (btn instanceof HTMLElement) btn.blur(); } catch (e) {}
-					});
-			document.querySelectorAll('resume-attrib').forEach((btn) => {
-						try { if (btn instanceof HTMLElement) btn.blur(); } catch (e) {}
-					});
-		}
-	});
-})();
+	// When the user leaves the tab, blur any focused icon buttons so they are unfocused when returning.
+	(function () {
+		document.addEventListener("visibilitychange", () => {
+			if (document.visibilityState === "hidden") {
+				document.querySelectorAll(".icon-btn").forEach((btn) => {
+					try {
+						if (btn instanceof HTMLElement) btn.blur();
+					} catch (e) {}
+				});
+				document.querySelectorAll("resume-attrib").forEach((btn) => {
+					try {
+						if (btn instanceof HTMLElement) btn.blur();
+					} catch (e) {}
+				});
+			}
+		});
+	})();
 </script>
-
