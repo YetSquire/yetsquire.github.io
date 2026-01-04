@@ -4,7 +4,7 @@ import path from "path";
 import slugify from "slugify";
 
 const ROOT = process.cwd();
-const INDEX_PATH = path.join(ROOT, "scripts/.post-index.json");
+const INDEX_PATH = path.join(ROOT, "src/scripts/.post_index.json");
 
 function loadIndex() {
   if (!fs.existsSync(INDEX_PATH)) return {};
@@ -27,7 +27,7 @@ function parseFrontmatter(md) {
 }
 
 function resolveImage(id, name) {
-  const dir = path.join(ROOT, "public/images/posts", id);
+  const dir = path.join(ROOT, "images/posts", id);
   const file = fs.readdirSync(dir).find(f => f.startsWith(name));
   if (!file) throw new Error(`Image not found: ${name}`);
   return file;
@@ -64,7 +64,8 @@ function transformBody(body, id) {
   return { content, cover };
 }
 
-function compile(sourcePath) {
+function compile(blogDraftName, manualDate = null) {
+  const sourcePath = path.join(ROOT, "src/content/drafts", `${blogDraftName}.md`);
   const raw = fs.readFileSync(sourcePath, "utf8");
   const { frontmatter, body } = parseFrontmatter(raw);
 
@@ -75,16 +76,21 @@ function compile(sourcePath) {
     const id = `${Object.keys(index).length}-${slugify(title, { lower: true })}`;
     index[title] = {
       id,
-      date: new Date().toISOString().slice(0, 10)
+      date: manualDate || new Date().toISOString().slice(0, 10)
     };
     saveIndex(index);
   }
 
   const { id, date } = index[title];
   const [year, month] = date.split("-");
-  const pathname = `/${year}/${month}/${id}`;
+  const pathname = `/post/${id}`;
 
   const { content, cover } = transformBody(body, id);
+
+  const tagsArray = frontmatter.tags
+    ? frontmatter.tags.trim().split(/\s+/)   // split on whitespace
+    : [];
+    const tagsYaml = tagsArray.map(t => `  - ${t}`).join("\n");
 
   const output = `---
 id: "${id}"
@@ -92,16 +98,17 @@ pathname: "${pathname}"
 title: "${title}"
 date: "${date}"
 tags:
-${(frontmatter.tags || []).map(t => `  - ${t}`).join("\n")}
+${tagsYaml}
 ${cover ? `cover: ${cover}` : ""}
 ---
 
 ${content}
 `;
 
-  const outPath = path.join(ROOT, "src/content/posts", `${id}.md`);
+  const outPath = path.join(ROOT, "src/content/posts", year, month, `${id}.md`);
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, output);
   console.log(`Compiled → ${outPath}`);
 }
 
-compile(process.argv[2]);
+compile(process.argv[2], process.argv[3]);
