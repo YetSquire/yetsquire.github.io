@@ -1,3 +1,8 @@
+TODO- finish the compile_post functionality
+Input->draft template + /<id>/image.png
+Output->markdown
+
+
 
 Post idea- put it all into one folder, master folder under posts, and autogenerate monthly folders on build?
 - Make a changed/not-changed system

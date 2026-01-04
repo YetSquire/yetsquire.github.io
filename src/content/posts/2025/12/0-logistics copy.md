@@ -1,12 +1,8 @@
 ---
-id: "0-logistics"
-pathname: "/post/0-logistics"
 title: "Logistics"
-date: "2025-12-10"
 tags:
   - blog
   - infra
-cover: project1.jpg
 ---
 
 
@@ -16,26 +12,16 @@ Intro paragraph describing the goals and outcomes.
 
 Early in the project we sketched a system diagram:
 
-![System diagram](/images/posts/0-logistics/diagram.png)
+image system-diagram
 
 We then implemented a prototype; here is a quick screenshot:
 
-![Prototype screenshot](/images/posts/0-logistics/screenshot2.jpg)
-
-Later we recorded a short demo video to show the system in action:
+image screenshot2
 
 Additional notes and reflections go here. You can add more images or videos anywhere in the markdown, for example another image inline:
 
 And an embedded second video:
 
-<iframe
-  width="560"
-  height="315"
-  src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-  title="YouTube video"
-  frameborder="0"
-  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-  allowfullscreen
-></iframe>
+https://www.youtube.com/embed/dQw4w9WgXcQ
 
 More details about the project, challenges, and outcomes.
