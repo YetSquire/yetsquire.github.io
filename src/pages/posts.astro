@@ -89,6 +89,7 @@ const sortedPosts = filteredPosts.sort(
 	<script type="module">
 		import { initPostsFilter } from "/src/scripts/init_posts.js";
 		document.addEventListener("astro:page-load", initPostsFilter);
+		initPostsFilter(); // In case astro:page-load doesn't fire
 	</script>
 
 	<h1>Posts</h1>

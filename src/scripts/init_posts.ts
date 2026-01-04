@@ -8,7 +8,9 @@ function getInitialSelectedTagsFromUrl() {
 export function initPostsFilter() {
   const tryInit = () => {
     const postListEl = document.getElementById("posts-list");
-    if (!postListEl) return false;
+    if (!postListEl) {
+      return false;
+    }
 
     const tagButtons = Array.from(
       document.querySelectorAll<HTMLButtonElement>(".filter-tag")

@@ -2,17 +2,11 @@
 id: "0-logistics"
 pathname: "/post/0-logistics"
 title: "Logistics"
-description: "An exciting new project I just completed"
 date: "2025-12-10"
 tags:
   - blog
   - infra
 cover: project1.jpg
-images:
-  - diagram.png
-  - screenshot2.jpg
-videos:
-  - video1.mp4
 ---
 
 
