@@ -1,0 +1,51 @@
+#compile-tab-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 999999;
+
+  padding: 10px 16px;
+  font-size: 14px;
+
+  background: #1a73e8;
+  color: white;
+  border-radius: 6px;
+  border: none;
+
+  cursor: pointer;
+}
+
+#compile-tab-btn:disabled {
+  cursor: wait;
+  opacity: 0.8;
+}
+
+.compile-status {
+  position: fixed;
+  right: 20px;
+  bottom: 72px;
+  z-index: 1000000;
+  max-width: 320px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.compile-status.success {
+  background: #188038;
+}
+
+.compile-status.error {
+  background: #c5221f;
+}
+
+.compile-status.hide {
+  opacity: 0;
+  transform: translateY(6px);
+}
