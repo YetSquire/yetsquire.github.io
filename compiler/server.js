@@ -10,7 +10,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const SCOPES = ["https://www.googleapis.com/auth/documents.readonly"];
+const SCOPES = [
+  "https://www.googleapis.com/auth/documents.readonly",
+  "https://www.googleapis.com/auth/drive.readonly"
+];
 const TOKEN_PATH = "token.json";
 
 let authClient = null;
@@ -206,7 +209,174 @@ function resolveListsMap({ document, tab }) {
   return { lists: {}, listsSource: "none" };
 }
 
-async function renderStructuralElementsToMarkdown({ elements, document, tab, postId, stripMetaLines = true }) {
+function flattenTabs(tabs) {
+  const out = [];
+  const walk = (t) => {
+    if (!t) return;
+    const id = t?.tabProperties?.tabId || null;
+    const title = t?.tabProperties?.title || null;
+    out.push({ tabId: id, title });
+    for (const child of t?.childTabs || []) walk(child);
+  };
+  for (const t of Array.isArray(tabs) ? tabs : []) walk(t);
+  return out;
+}
+
+function extractBodyInnerHtml(html) {
+  const raw = String(html || "");
+  const m = raw.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i);
+  return m ? m[1] : raw;
+}
+
+function extractHeadStyleHtml(html) {
+  const raw = String(html || "");
+  const head = raw.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i);
+  const within = head ? head[1] : raw;
+  const styles = [];
+  const re = /<style\b[^>]*>[\s\S]*?<\/style>/gi;
+  let m;
+  while ((m = re.exec(within)) !== null) styles.push(m[0]);
+  return styles.join("\n");
+}
+
+function stripMetaHeaderFromExportHtml(bodyHtml) {
+  // Best-effort: remove the first Title/Date/Tags paragraphs, regardless of styling.
+  let html = String(bodyHtml || "");
+  const patterns = [
+    /<p\b[^>]*>\s*Title:\s*[\s\S]*?<\/p>/i,
+    /<p\b[^>]*>\s*Date:\s*[\s\S]*?<\/p>/i,
+    /<p\b[^>]*>\s*Tags:\s*[\s\S]*?<\/p>/i
+  ];
+  for (const p of patterns) html = html.replace(p, "");
+  return html.trim();
+}
+
+async function exportTabHtmlViaDocs({ docId, tabId }) {
+  // Prefer the native Google Docs HTML export endpoint (matches the UI export best).
+  const candidates = tabIdCandidates(tabId);
+  const base = `https://docs.google.com/document/d/${docId}/export`;
+
+  let lastErr = null;
+  for (const t of candidates.length ? candidates : [null]) {
+    const url = t
+      ? `${base}?format=html&tab=${encodeURIComponent(t)}`
+      : `${base}?format=html`;
+    try {
+      const resp = await authClient.request({
+        url,
+        method: "GET",
+        responseType: "text",
+        headers: { Accept: "text/html" }
+      });
+      const html = String(resp?.data || "");
+      if (html) return html;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+
+  if (lastErr) {
+    if (isInvalidGrantError(lastErr)) throw lastErr;
+    throw httpError(
+      400,
+      "Failed to export Google Doc as HTML via docs.google.com export endpoint.",
+      lastErr?.message || String(lastErr)
+    );
+  }
+
+  throw httpError(400, "Failed to export Google Doc as HTML.", "No export candidates succeeded.");
+}
+
+function extractTabSectionFromExportHtml({ exportBodyHtml, targetTitle, allTitles }) {
+  const body = String(exportBodyHtml || "");
+  const target = String(targetTitle || "").trim();
+  if (!target) return null;
+
+  // Find first occurrence of each tab title (simple heuristic).
+  const found = [];
+  for (const t of allTitles || []) {
+    const title = String(t || "").trim();
+    if (!title) continue;
+    const idx = body.indexOf(title);
+    if (idx >= 0) found.push({ title, idx });
+  }
+  const targetEntry = found.find(f => f.title === target);
+  if (!targetEntry) return null;
+
+  found.sort((a, b) => a.idx - b.idx);
+  const start = targetEntry.idx;
+  const next = found.find(f => f.idx > start);
+  const end = next ? next.idx : body.length;
+  return body.slice(start, end).trim();
+}
+
+async function exportDocHtmlViaDrive(docId) {
+  const drive = google.drive({ version: "v3", auth: authClient });
+  try {
+    const resp = await drive.files.export(
+      { fileId: docId, mimeType: "text/html" },
+      { responseType: "text" }
+    );
+    return String(resp?.data || "");
+  } catch (e) {
+    if (isInvalidGrantError(e)) throw e;
+    throw httpError(
+      400,
+      "Failed to export Google Doc as HTML via Drive API.",
+      e?.message || String(e)
+    );
+  }
+}
+
+async function rewriteAndDownloadImagesFromExportHtml({ html, postId }) {
+  let out = String(html || "");
+  const images = [];
+  const srcToFilename = new Map();
+
+  const imgTagRe = /<img\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi;
+  const seen = new Set();
+  let match;
+
+  while ((match = imgTagRe.exec(out)) !== null) {
+    const src = match[1];
+    if (!src) continue;
+    if (src.startsWith(`/images/posts/${postId}/`)) continue;
+    if (seen.has(src)) continue;
+    seen.add(src);
+
+    const nameBase = `img-${stableHexId(`export-img:${postId}:${src}`)}`;
+    const filename = await downloadImageToPostsFolder({ url: src, postId, nameBase });
+    images.push(filename);
+    srcToFilename.set(src, filename);
+  }
+
+  // Rewrite src + ensure class.
+  out = out.replace(imgTagRe, (full, src) => {
+    if (!src) return full;
+    if (src.startsWith(`/images/posts/${postId}/`)) return full;
+    const file = srcToFilename.get(src);
+    if (!file) return full;
+
+    let tag = String(full);
+    // rewrite src
+    tag = tag.replace(/\bsrc=["'][^"']+["']/, `src="/images/posts/${postId}/${file}"`);
+    // ensure class contains doc-image
+    if (/\bclass=/.test(tag)) {
+      tag = tag.replace(/\bclass=["']([^"']*)["']/, (m, cls) => {
+        const classes = String(cls || "").split(/\s+/).filter(Boolean);
+        if (!classes.includes("doc-image")) classes.push("doc-image");
+        return `class="${classes.join(" ")}"`;
+      });
+    } else {
+      tag = tag.replace(/^<img\b/, `<img class="doc-image"`);
+    }
+    return tag;
+  });
+
+  return { html: out, images };
+}
+
+async function renderStructuralElementsToHtml({ elements, document, tab, postId, stripMetaLines = false }) {
   const {
     inlineObjects,
     inlineObjectsSource,
@@ -224,92 +394,73 @@ async function renderStructuralElementsToMarkdown({ elements, document, tab, pos
   const missingPositionedObjectIds = [];
   const images = [];
 
+  const escapeHtml = (s) => String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+  const preserveWhitespace = (s) => {
+    // Docs text runs can contain tabs/spaces that should be visible in HTML.
+    // - Tabs -> &emsp;
+    // - Double spaces -> " &nbsp;" so sequences are preserved without affecting wrapping too much
+    let out = String(s || "").replace(/\t/g, "&emsp;");
+    out = out.replace(/  /g, " &nbsp;");
+    return out;
+  };
+
   const isMonospaceFont = (fontFamily) => {
     const ff = String(fontFamily || "").toLowerCase();
     return ff.includes("courier") || ff.includes("consolas") || ff.includes("menlo") || ff.includes("monaco") || ff.includes("monospace");
   };
 
-  const splitTrailingNewlines = (s) => {
-    const str = String(s || "");
-    const m = str.match(/(\n+)$/);
-    if (!m) return { text: str, suffix: "" };
-    const suffix = m[1];
-    return { text: str.slice(0, -suffix.length), suffix };
-  };
-
-  const renderTextRunToMarkdown = (textRun, continuationIndent = "") => {
+  const renderTextRunToHtml = (textRun) => {
     const content = textRun?.content || "";
-    const { text, suffix } = splitTrailingNewlines(content);
-    if (!text) return "";
+    if (!content) return "";
 
     const style = textRun?.textStyle || {};
-
-    // Tabs/spaces collapse in HTML, so emit a visible whitespace entity for tabs.
-    let inner = text.replace(/\t/g, "&emsp;");
-
-    if (isMonospaceFont(style?.weightedFontFamily?.fontFamily)) {
-      inner = "`" + inner.replace(/`/g, "\\`") + "`";
-    } else {
-      const bold = !!style.bold;
-      const italic = !!style.italic;
-      const strike = !!style.strikethrough;
-      const underline = !!style.underline;
-
-      if (bold && italic) inner = `***${inner}***`;
-      else if (bold) inner = `**${inner}**`;
-      else if (italic) inner = `_${inner}_`;
-
-      if (strike) inner = `~~${inner}~~`;
-      if (underline) inner = `<u>${inner}</u>`;
-    }
-
     const url = style?.link?.url;
-    if (url) {
-      const label = String(inner).replace(/]/g, "\\]");
-      inner = `[${label}](${url})`;
-      links.push({ url, driveFileId: driveFileIdFromUri(url) });
+
+    let inner = preserveWhitespace(escapeHtml(content)).replace(/\n/g, "<br/>");
+
+    // Inline code-ish formatting (heuristic).
+    if (isMonospaceFont(style?.weightedFontFamily?.fontFamily)) {
+      inner = `<code>${inner}</code>`;
     }
 
-    const withBreaks = continuationIndent
-      ? inner.replace(/\n/g, "\n" + continuationIndent)
-      : inner;
-    return withBreaks;
+    if (style.bold) inner = `<strong>${inner}</strong>`;
+    if (style.italic) inner = `<em>${inner}</em>`;
+    if (style.underline) inner = `<u>${inner}</u>`;
+    if (style.strikethrough) inner = `<s>${inner}</s>`;
+
+    if (url) {
+      links.push({ url, driveFileId: driveFileIdFromUri(url) });
+      inner = `<a href="${escapeHtml(url)}">${inner}</a>`;
+    }
+
+    return inner;
   };
 
-  let lastListKey = null;
-  const listCounters = new Map();
-
-  const paragraphPrefix = (paragraph) => {
+  const paragraphTag = (paragraph) => {
     const named = paragraph?.paragraphStyle?.namedStyleType;
     if (named && /^HEADING_\d+$/.test(named)) {
       const level = Math.max(1, Math.min(6, Number(named.replace("HEADING_", ""))));
-      return `${"#".repeat(level)} `;
+      return `h${level}`;
     }
-    if (named === "TITLE") return "# ";
-    if (named === "SUBTITLE") return "## ";
+    if (named === "TITLE") return "h1";
+    if (named === "SUBTITLE") return "h2";
+    return "p";
+  };
 
+  const bulletInfo = (paragraph) => {
     const bullet = paragraph?.bullet;
-    if (bullet?.listId) {
-      const nestingLevel = Number(bullet.nestingLevel || 0);
-      const glyphType =
-        lists?.[bullet.listId]?.listProperties?.nestingLevels?.[nestingLevel]?.glyphType || "";
-      const ordered = /DECIMAL|ALPHA|ROMAN/i.test(String(glyphType));
-      const indent = "    ".repeat(Math.max(0, nestingLevel));
-
-      const key = `${bullet.listId}:${nestingLevel}:${ordered ? "ol" : "ul"}`;
-      if (ordered) {
-        const next = (lastListKey === key ? (listCounters.get(key) || 0) + 1 : 1);
-        listCounters.set(key, next);
-        lastListKey = key;
-        return indent + `${next}. `;
-      }
-
-      lastListKey = key;
-      return indent + "- ";
-    }
-
-    lastListKey = null;
-    return "";
+    if (!bullet?.listId) return null;
+    const nestingLevel = Number(bullet.nestingLevel || 0);
+    const glyphType =
+      lists?.[bullet.listId]?.listProperties?.nestingLevels?.[nestingLevel]?.glyphType || "";
+    const ordered = /DECIMAL|ALPHA|ROMAN/i.test(String(glyphType));
+    return { listId: bullet.listId, nestingLevel, ordered };
   };
 
   const toAltText = (embeddedObject) => {
@@ -317,7 +468,7 @@ async function renderStructuralElementsToMarkdown({ elements, document, tab, pos
     return String(alt).replace(/\n/g, " ").trim() || "image";
   };
 
-  const resolveEmbeddedImageMarkdown = async ({ key, map, embeddedObject }) => {
+  const resolveEmbeddedImageHtml = async ({ key, map, embeddedObject }) => {
     if (!key) return "";
     if (map.has(key)) {
       const existing = map.get(key);
@@ -341,31 +492,29 @@ async function renderStructuralElementsToMarkdown({ elements, document, tab, pos
     return `<img class="doc-image" alt="${alt.replace(/\"/g, "&quot;")}" src="/images/posts/${postId}/${filename}"${widthAttr} />`;
   };
 
-  const resolveInlineImageMarkdown = async (inlineObjectId) => {
+  const resolveInlineImageHtml = async (inlineObjectId) => {
     if (inlineObjectId) usedInlineObjectIds.push(inlineObjectId);
     const obj = inlineObjects?.[inlineObjectId];
     if (!obj && inlineObjectId) missingInlineObjectIds.push(inlineObjectId);
     const embedded = obj?.inlineObjectProperties?.embeddedObject;
-    return resolveEmbeddedImageMarkdown({
+    return resolveEmbeddedImageHtml({
       key: inlineObjectId,
       map: inlineIdToFilename,
       embeddedObject: embedded
     });
   };
 
-  const resolvePositionedImageMarkdown = async (positionedObjectId) => {
+  const resolvePositionedImageHtml = async (positionedObjectId) => {
     if (positionedObjectId) usedPositionedObjectIds.push(positionedObjectId);
     const obj = positionedObjects?.[positionedObjectId];
     if (!obj && positionedObjectId) missingPositionedObjectIds.push(positionedObjectId);
     const embedded = obj?.positionedObjectProperties?.embeddedObject;
-    return resolveEmbeddedImageMarkdown({
+    return resolveEmbeddedImageHtml({
       key: positionedObjectId,
       map: positionedIdToFilename,
       embeddedObject: embedded
     });
   };
-
-  const out = [];
 
   const paragraphPlainText = (paragraph) => {
     return String(
@@ -400,45 +549,83 @@ async function renderStructuralElementsToMarkdown({ elements, document, tab, pos
     }
   }
 
-  const walk = async (els) => {
-    if (!Array.isArray(els)) return;
-    let lastWasList = false;
+  const renderElements = async (els) => {
+    if (!Array.isArray(els)) return "";
+
+    let html = "";
+    const listStack = []; // entries: { listId, ordered }
+
+    const closeListsTo = (depth) => {
+      while (listStack.length > depth) {
+        const last = listStack.pop();
+        html += last?.ordered ? "</ol>" : "</ul>";
+      }
+    };
+
+    const openList = (ordered) => {
+      html += ordered ? "<ol>" : "<ul>";
+      listStack.push({ ordered });
+    };
+
+    const ensureListDepth = (targetDepth, orderedAtDepth) => {
+      // Close if we're deeper than needed
+      closeListsTo(targetDepth);
+      // Open until we reach targetDepth
+      while (listStack.length < targetDepth) {
+        const ordered = orderedAtDepth?.[listStack.length] || false;
+        openList(ordered);
+      }
+    };
+
     for (const el of els) {
-      
       if (el?.paragraph) {
-        if (skipParagraphs.has(el.paragraph)) continue;
         const p = el.paragraph;
-        const isList = !!p?.bullet?.listId;
-        const prefix = paragraphPrefix(p);
-        const continuationIndent = isList ? " ".repeat(prefix.length) : "";
+        if (skipParagraphs.has(p)) continue;
 
-        if (lastWasList && !isList) out.push("\n");
-        if (!lastWasList && isList && out.length) out.push("\n");
+        const bi = bulletInfo(p);
+        if (bi) {
+          // Nested lists: depth = nestingLevel + 1
+          const targetDepth = Math.max(0, bi.nestingLevel) + 1;
+          const orderedByDepth = [];
+          orderedByDepth[targetDepth - 1] = !!bi.ordered;
+          ensureListDepth(targetDepth, orderedByDepth);
 
-        const blocks = [];
-        let current = prefix;
-        const startNewSegment = () => {
-          const trimmed = String(current).trimEnd();
-          if (trimmed && trimmed !== String(prefix).trimEnd()) blocks.push(trimmed);
-          current = isList ? continuationIndent : "";
-        };
-
-        for (const pe of p.elements || []) {
-          if (pe?.textRun) {
-            current += renderTextRunToMarkdown(pe.textRun, continuationIndent);
-            continue;
-          }
-          if (pe?.inlineObjectElement?.inlineObjectId) {
-            const md = await resolveInlineImageMarkdown(pe.inlineObjectElement.inlineObjectId);
-            if (md) {
-              // Treat images as block-level so sizing/margins behave consistently.
-              startNewSegment();
-              blocks.push((isList ? continuationIndent : "") + md);
-              current = isList ? continuationIndent : "";
+          let liInner = "";
+          for (const pe of p.elements || []) {
+            if (pe?.textRun) liInner += renderTextRunToHtml(pe.textRun);
+            else if (pe?.inlineObjectElement?.inlineObjectId) {
+              const img = await resolveInlineImageHtml(pe.inlineObjectElement.inlineObjectId);
+              if (img) liInner += `<figure>${img}</figure>`;
+            } else if (pe?.richLink?.richLinkProperties?.uri) {
+              const props = pe.richLink.richLinkProperties;
+              richLinks.push({
+                title: props.title || null,
+                uri: props.uri,
+                mimeType: props.mimeType || null,
+                driveFileId: driveFileIdFromUri(props.uri)
+              });
             }
-            continue;
           }
-          if (pe?.richLink?.richLinkProperties?.uri) {
+          for (const positionedObjectId of p.positionedObjectIds || []) {
+            const img = await resolvePositionedImageHtml(positionedObjectId);
+            if (img) liInner += `<figure>${img}</figure>`;
+          }
+
+          html += `<li>${liInner.trim()}</li>`;
+          continue;
+        }
+
+        // Non-list paragraph: close any open lists first.
+        closeListsTo(0);
+
+        const tag = paragraphTag(p);
+        let inner = "";
+        for (const pe of p.elements || []) {
+          if (pe?.textRun) inner += renderTextRunToHtml(pe.textRun);
+          else if (pe?.inlineObjectElement?.inlineObjectId) {
+            const img = await resolveInlineImageHtml(pe.inlineObjectElement.inlineObjectId);
+            if (img) inner += `<figure>${img}</figure>`;
+          } else if (pe?.richLink?.richLinkProperties?.uri) {
             const props = pe.richLink.richLinkProperties;
             richLinks.push({
               title: props.title || null,
@@ -448,38 +635,47 @@ async function renderStructuralElementsToMarkdown({ elements, document, tab, pos
             });
           }
         }
-
-        const finalTrimmed = String(current).trimEnd();
-        if (finalTrimmed && finalTrimmed !== String(prefix).trimEnd()) blocks.push(finalTrimmed);
-
         for (const positionedObjectId of p.positionedObjectIds || []) {
-          const md = await resolvePositionedImageMarkdown(positionedObjectId);
-          if (md) blocks.push((isList ? continuationIndent : "") + md);
+          const img = await resolvePositionedImageHtml(positionedObjectId);
+          if (img) inner += `<figure>${img}</figure>`;
         }
 
-        const joined = blocks.join(isList ? "\n" : "\n\n");
-        if (joined) out.push(joined + (isList ? "\n" : "\n\n"));
-        lastWasList = isList;
+        const trimmed = inner.trim();
+        if (trimmed) html += `<${tag}>${trimmed}</${tag}>`;
         continue;
       }
+
       if (el?.table) {
+        // Close lists before tables
+        closeListsTo(0);
+        html += "<table><tbody>";
         for (const row of el.table.tableRows || []) {
+          html += "<tr>";
           for (const cell of row.tableCells || []) {
-            await walk(cell.content);
+            const cellHtml = await renderElements(cell.content || []);
+            html += `<td>${cellHtml}</td>`;
           }
+          html += "</tr>";
         }
+        html += "</tbody></table>";
         continue;
       }
+
       if (el?.tableOfContents) {
-        await walk(el.tableOfContents.content);
+        closeListsTo(0);
+        const tocHtml = await renderElements(el.tableOfContents.content || []);
+        html += `<nav class="doc-toc">${tocHtml}</nav>`;
         continue;
       }
     }
+
+    closeListsTo(0);
+    return html;
   };
 
-  await walk(elements);
+  const html = await renderElements(elements);
   return {
-    markdown: out.join(""),
+    html,
     images,
     debug: {
       inlineObjectsSource,
@@ -685,14 +881,54 @@ app.post("/compile", async (req, res) => {
 
     const content = tab?.documentTab?.body?.content;
     const tabPlainText = collectTextFromStructuralElements(content || []);
-    const rendered = await renderStructuralElementsToMarkdown({
-      elements: content || [],
-      document,
-      tab,
-      postId,
-      stripMetaLines: true
-    });
-    const tabMarkdown = rendered.markdown;
+    const tabTitle = tab?.tabProperties?.title || "";
+    const allTabTitles = flattenTabs(tabs).map(t => t.title).filter(Boolean);
+
+    let renderMode = "docs_export_html";
+    let rendered = null;
+    let tabHtml = "";
+    let exportedDebug = null;
+
+    try {
+      // 1) Best: use native docs.google.com export endpoint (preserves lists/tabs exactly).
+      const exported = await exportTabHtmlViaDocs({ docId, tabId });
+      const styleHtml = extractHeadStyleHtml(exported);
+      const exportBody = extractBodyInnerHtml(exported);
+      const rewritten = await rewriteAndDownloadImagesFromExportHtml({ html: exportBody, postId });
+      tabHtml = `${styleHtml ? styleHtml + "\n" : ""}<div class="doc-export">${rewritten.html}</div>`;
+      rendered = { images: rewritten.images, debug: { inlineObjectsCount: 0, positionedObjectsCount: 0, usedInlineObjectIds: [], usedPositionedObjectIds: [], richLinks: [], links: [] } };
+      exportedDebug = { exportedVia: "docs", tabId, tabTitle };
+    } catch (e) {
+      // 2) Next-best: Drive export (full doc), then attempt tab extraction (heuristic).
+      try {
+        renderMode = "drive_export_html";
+        const exported = await exportDocHtmlViaDrive(docId);
+        const styleHtml = extractHeadStyleHtml(exported);
+        const exportBody = extractBodyInnerHtml(exported);
+        const extracted = extractTabSectionFromExportHtml({
+          exportBodyHtml: exportBody,
+          targetTitle: tabTitle,
+          allTitles: allTabTitles
+        });
+        if (!extracted) throw httpError(400, "Could not locate tab within exported HTML.", "Falling back to Docs API renderer.");
+        const rewritten = await rewriteAndDownloadImagesFromExportHtml({ html: extracted, postId });
+        tabHtml = `${styleHtml ? styleHtml + "\n" : ""}<div class="doc-export">${rewritten.html}</div>`;
+        rendered = { images: rewritten.images, debug: { inlineObjectsCount: 0, positionedObjectsCount: 0, usedInlineObjectIds: [], usedPositionedObjectIds: [], richLinks: [], links: [] } };
+        exportedDebug = { exportedVia: "drive", extracted: true, tabTitle, titlesFound: allTabTitles.length };
+      } catch (e2) {
+        // 3) Fallback: Docs API structural render.
+        renderMode = "docs_api_html_fallback";
+        rendered = await renderStructuralElementsToHtml({
+          elements: content || [],
+          document,
+          tab,
+          postId,
+          stripMetaLines: false
+        });
+        tabHtml = `<div class="doc-export">${rendered.html}</div>`;
+        exportedDebug = { exportedVia: "none", error: e2?.message || e?.message || String(e2 || e) };
+      }
+    }
 
     const warnings = [];
     if (rendered.images.length === 0) {
@@ -721,7 +957,7 @@ app.post("/compile", async (req, res) => {
     const postTags = extracted.postTags.map(t => t.trim()).filter(Boolean);
 
     const postDateISO = mmddyyyyToISO(postDate);
-    let body = String(tabMarkdown || "").trim();
+    let body = String(tabHtml || "").trim();
 
     // Avoid rendering the same image twice (cover image is rendered separately by the site).
     // Only pick a cover if the first image appears near the top of the body, then remove its
@@ -730,14 +966,14 @@ app.post("/compile", async (req, res) => {
     if (rendered.images.length) {
       const candidate = rendered.images[0];
       const src = `/images/posts/${postId}/${candidate}`;
-      const mdImgRe = new RegExp(`!\\[[^\\]]*\\]\\(${escapeRegExp(src)}\\)`);
+      const htmlFigureRe = new RegExp(`<figure>\\s*<img[^>]*\\ssrc=["']${escapeRegExp(src)}["'][^>]*>\\s*<\\/figure>`, "i");
       const htmlImgRe = new RegExp(`<img[^>]*\\ssrc=["']${escapeRegExp(src)}["'][^>]*>`, "i");
-      const mdIdx = body.search(mdImgRe);
-      const htmlIdx = body.search(htmlImgRe);
-      const idx = (mdIdx >= 0 && htmlIdx >= 0) ? Math.min(mdIdx, htmlIdx) : Math.max(mdIdx, htmlIdx);
-      if (idx >= 0 && idx < 800) {
+      const figIdx = body.search(htmlFigureRe);
+      const imgIdx = body.search(htmlImgRe);
+      const idx = (figIdx >= 0 && imgIdx >= 0) ? Math.min(figIdx, imgIdx) : Math.max(figIdx, imgIdx);
+      if (idx >= 0 && idx < 1200) {
         cover = candidate;
-        if (mdIdx === idx) body = body.replace(mdImgRe, "");
+        if (figIdx === idx) body = body.replace(htmlFigureRe, "");
         else body = body.replace(htmlImgRe, "");
         body = body.replace(/^\s*\n/, "");
       }
@@ -781,7 +1017,7 @@ app.post("/compile", async (req, res) => {
       warnings,
       body,
       postMarkdown,
-      ...(debug ? { debug: rendered.debug } : {})
+      ...(debug ? { debug: { renderMode, exportedDebug, ...(rendered.debug || {}) } } : {})
     });
 
   } catch (err) {

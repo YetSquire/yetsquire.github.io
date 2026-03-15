@@ -58,9 +58,6 @@ const videos = Array.isArray(fm.videos) ? fm.videos : (fm.videos ? [fm.videos] :
 
 <Layout title={fm.title || id}>
     <article class="post-full">
-        <h1>{fm.title}</h1>
-        <p class="date">{parseDateOnlyAsLocalDate(fm.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-
         {cover && <img class="cover" src={cover} alt={fm.title} />}
 
         <section class="post-content">
