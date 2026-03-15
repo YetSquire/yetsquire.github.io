@@ -7,6 +7,12 @@ import PostCard from "../components/PostCard.astro";
 //TODO- add filter by date
 const numberOfPostsToLoad = 100;
 
+const parseDateOnlyAsLocalDate = (value: string): Date => {
+	const m = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+	if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+	return new Date(value);
+};
+
 // Load all markdown post files from the content directory
 const modules = import.meta.glob("../content/posts/**/*.md", {
 	eager: true,
@@ -81,7 +87,9 @@ const filteredPosts =
 
 // Sort posts by date (newest first)
 const sortedPosts = filteredPosts.sort(
-	(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+	(a, b) =>
+		parseDateOnlyAsLocalDate(b.date).getTime() -
+		parseDateOnlyAsLocalDate(a.date).getTime(),
 );
 ---
 

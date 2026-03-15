@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const { google } = require("googleapis");
 const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
 
 const app = express();
 
@@ -12,6 +14,22 @@ const TOKEN_PATH = "token.json";
 
 let authClient = null;
 let oAuth2Client = null;
+
+function httpError(status, message, details) {
+  const err = new Error(message);
+  err.status = status;
+  if (details) err.details = details;
+  return err;
+}
+
+function uuidFromTabId(tabId) {
+  const hash = crypto.createHash("sha256").update(`docs-tab:${String(tabId)}`).digest();
+  const bytes = Buffer.from(hash.subarray(0, 16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x50; // version 5
+  bytes[8] = (bytes[8] & 0x3f) | 0x80; // RFC4122 variant
+  const hex = bytes.toString("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
 
 function isValidMMDDYYYY(mmddyyyy) {
   const m = String(mmddyyyy || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
@@ -87,6 +105,123 @@ function stripMetaHeaderLines(text) {
   }
 
   return out.join("\n").trim();
+}
+
+function yamlList(items, indent = "  ") {
+  const list = Array.isArray(items) ? items : [];
+  if (list.length === 0) return `${indent}[]`;
+  return list.map(i => `${indent}- ${String(i)}`).join("\n");
+}
+
+function guessImageExtension(contentType) {
+  const ct = String(contentType || "").toLowerCase().split(";")[0].trim();
+  if (ct === "image/jpeg") return "jpg";
+  if (ct === "image/png") return "png";
+  if (ct === "image/gif") return "gif";
+  if (ct === "image/webp") return "webp";
+  if (ct === "image/svg+xml") return "svg";
+  return "png";
+}
+
+async function downloadImageToPostsFolder({ url, postId, nameBase }) {
+  const root = path.resolve(__dirname, "..");
+  const dir = path.join(root, "images", "posts", postId);
+  fs.mkdirSync(dir, { recursive: true });
+
+  let resp;
+  try {
+    resp = await authClient.request({
+      url,
+      method: "GET",
+      responseType: "arraybuffer"
+    });
+  } catch (e) {
+    throw httpError(
+      400,
+      "Failed to download an inline image from Google Docs.",
+      e?.message || String(e)
+    );
+  }
+
+  const ext = guessImageExtension(resp?.headers?.["content-type"]);
+  const filename = `${nameBase}.${ext}`;
+  const outPath = path.join(dir, filename);
+
+  if (!fs.existsSync(outPath)) {
+    const buf = Buffer.isBuffer(resp.data) ? resp.data : Buffer.from(resp.data);
+    fs.writeFileSync(outPath, buf);
+  }
+
+  return filename;
+}
+
+async function renderStructuralElementsToMarkdown({ elements, document, postId }) {
+  const inlineObjects = document?.inlineObjects || {};
+  const inlineIdToFilename = new Map();
+  const images = [];
+  let imageCounter = 0;
+
+  const resolveInlineImageMarkdown = async (inlineObjectId) => {
+    if (!inlineObjectId) return "";
+    if (inlineIdToFilename.has(inlineObjectId)) {
+      const existing = inlineIdToFilename.get(inlineObjectId);
+      return existing ? `![image](/images/posts/${postId}/${existing})` : "";
+    }
+
+    const obj = inlineObjects?.[inlineObjectId];
+    const embedded = obj?.inlineObjectProperties?.embeddedObject;
+    const contentUri = embedded?.imageProperties?.contentUri;
+    if (!contentUri) {
+      inlineIdToFilename.set(inlineObjectId, null);
+      return "";
+    }
+
+    imageCounter += 1;
+    const nameBase = `image-${String(imageCounter).padStart(3, "0")}`;
+    const filename = await downloadImageToPostsFolder({ url: contentUri, postId, nameBase });
+    inlineIdToFilename.set(inlineObjectId, filename);
+    images.push(filename);
+
+    const alt = embedded?.title || embedded?.description || "image";
+    return `![${String(alt).replace(/\n/g, " ").trim()}](/images/posts/${postId}/${filename})`;
+  };
+
+  const out = [];
+
+  const walk = async (els) => {
+    if (!Array.isArray(els)) return;
+    for (const el of els) {
+      if (el?.paragraph) {
+        for (const pe of el.paragraph.elements || []) {
+          if (pe?.textRun?.content) out.push(pe.textRun.content);
+          else if (pe?.inlineObjectElement?.inlineObjectId) {
+            const md = await resolveInlineImageMarkdown(pe.inlineObjectElement.inlineObjectId);
+            if (md) out.push(md);
+          }
+        }
+        if (out.length && !String(out[out.length - 1]).endsWith("\n")) out.push("\n");
+        continue;
+      }
+      if (el?.table) {
+        for (const row of el.table.tableRows || []) {
+          for (const cell of row.tableCells || []) {
+            await walk(cell.content);
+          }
+        }
+        continue;
+      }
+      if (el?.tableOfContents) {
+        await walk(el.tableOfContents.content);
+        continue;
+      }
+    }
+  };
+
+  await walk(elements);
+  return {
+    markdown: out.join(""),
+    images
+  };
 }
 
 function collectTextFromStructuralElements(elements) {
@@ -214,6 +349,7 @@ app.post("/compile", async (req, res) => {
       });
     }
 
+    const postId = uuidFromTabId(tabId);
     const candidates = tabIdCandidates(tabId);
     const tab = tabs.find(t => candidates.includes(t?.tabProperties?.tabId));
 
@@ -225,9 +361,14 @@ app.post("/compile", async (req, res) => {
     }
 
     const content = tab?.documentTab?.body?.content;
-    const tabText = collectTextFromStructuralElements(content || []);
+    const rendered = await renderStructuralElementsToMarkdown({
+      elements: content || [],
+      document,
+      postId
+    });
+    const tabMarkdown = rendered.markdown;
 
-    const extracted = extractRequiredMetaFromText(tabText);
+    const extracted = extractRequiredMetaFromText(tabMarkdown);
     if (!extracted.ok) return res.status(400).json({ error: extracted.error });
 
     const postTitle = extracted.postTitle.trim();
@@ -235,34 +376,54 @@ app.post("/compile", async (req, res) => {
     const postTags = extracted.postTags.map(t => t.trim()).filter(Boolean);
 
     const postDateISO = mmddyyyyToISO(postDate);
-    const body = stripMetaHeaderLines(tabText);
+    const body = stripMetaHeaderLines(tabMarkdown);
 
-    const draftMarkdown = `---\n` +
-      `title: ${postTitle}\n` +
-      `date: ${postDateISO}\n` +
-      `tags: ${postTags.join(" ")}\n` +
-      `---\n\n` +
-      `${body}\n`;
+    const cover = rendered.images.length ? rendered.images[0] : "";
+    const frontmatter = [
+      "---",
+      `id: "${postId}"`,
+      `pathname: "/post/${postId}"`,
+      `sourceDocId: "${docId}"`,
+      `sourceTabId: "${tabId}"`,
+      `title: "${postTitle.replace(/\"/g, '\\"')}"`,
+      `date: "${postDateISO}"`,
+      "tags:",
+      yamlList(postTags, "  "),
+      ...(cover ? [`cover: ${cover}`] : []),
+      ...(rendered.images.length ? ["images:", yamlList(rendered.images, "  ")] : []),
+      "---"
+    ].join("\n");
 
-    process.stdout.write(draftMarkdown);
+    const postMarkdown = `${frontmatter}\n\n${body}\n`;
+
+    const root = path.resolve(__dirname, "..");
+    const outDir = path.join(root, "src", "content", "posts");
+    const outPath = path.join(outDir, `${postId}.md`);
+    fs.mkdirSync(outDir, { recursive: true });
+    fs.writeFileSync(outPath, postMarkdown, "utf8");
 
     res.json({
       ok: true,
-      message: `Prepared draft for "${postTitle}"`,
+      message: `Wrote post ${postId}`,
+      postId,
+      outPath,
       postTitle,
       postDate,
       postDateISO,
       postTags,
       resolvedTabId: tab?.tabProperties?.tabId,
+      cover: cover || null,
+      images: rendered.images,
       body,
-      draftMarkdown
+      postMarkdown
     });
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({
-      error: `compile failed: ${err?.message || String(err)}`,
-      details: err?.stack || String(err)
+    const status = Number(err?.status) || 500;
+    res.status(status).json({
+      error: status === 500 ? `compile failed: ${err?.message || String(err)}` : (err?.message || "compile failed"),
+      details: err?.details || err?.stack || String(err)
     });
   }
 });

@@ -4,6 +4,12 @@ import Layout from '../../layouts/Layout.astro';
 const { params } = Astro;
 const id = params.id;
 
+const parseDateOnlyAsLocalDate = (value: string): Date => {
+    const m = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return new Date(value);
+};
+
 // load all markdown posts
 const modules = import.meta.glob('../../content/posts/**/*.md', { eager: true }) as Record<string, any>;
 
@@ -53,7 +59,7 @@ const videos = Array.isArray(fm.videos) ? fm.videos : (fm.videos ? [fm.videos] :
 <Layout title={fm.title || id}>
     <article class="post-full">
         <h1>{fm.title}</h1>
-        <p class="date">{new Date(fm.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        <p class="date">{parseDateOnlyAsLocalDate(fm.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
 
         {cover && <img class="cover" src={cover} alt={fm.title} />}
 

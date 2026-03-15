@@ -3,11 +3,17 @@ const { post } = Astro.props;
 const displayImage = post.cover;
 
 const dataTags = (post.tags || []).join(',');
+
+const parseDateOnlyAsLocalDate = (value: string): Date => {
+	const m = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+	if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+	return new Date(value);
+};
 ---
 
 <article class="post-card" data-tags={dataTags} data-id={post.id}>
 	<h2><a href={post.pathname}>{post.title}</a></h2>
-	<p class="date">{new Date(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+	<p class="date">{parseDateOnlyAsLocalDate(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
 	<p class="description">{post.description}</p>
 	{displayImage && <img src={displayImage} alt={post.title} />}
 
