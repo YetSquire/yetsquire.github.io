@@ -10,10 +10,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const SCOPES = ["https://www.googleapis.com/auth/documents.readonly"];
 const TOKEN_PATH = "token.json";
 
 let authClient = null;
 let oAuth2Client = null;
+
+function isInvalidGrantError(err) {
+  const e = err?.response?.data?.error || err?.error || err?.message || "";
+  return String(e).toLowerCase().includes("invalid_grant");
+}
 
 function httpError(status, message, details) {
   const err = new Error(message);
@@ -188,7 +194,7 @@ function resolveObjectMaps({ document, tab }) {
   };
 }
 
-async function renderStructuralElementsToMarkdown({ elements, document, tab, postId }) {
+async function renderStructuralElementsToMarkdown({ elements, document, tab, postId, stripMetaLines = true }) {
   const {
     inlineObjects,
     inlineObjectsSource,
@@ -329,6 +335,39 @@ async function renderStructuralElementsToMarkdown({ elements, document, tab, pos
 
   const out = [];
 
+  const paragraphPlainText = (paragraph) => {
+    return String(
+      (paragraph?.elements || [])
+        .map(pe => pe?.textRun?.content || "")
+        .join("")
+    ).trim();
+  };
+
+  const skipParagraphs = new WeakSet();
+  if (stripMetaLines) {
+    const removed = { title: false, date: false, tags: false };
+    for (const el of elements || []) {
+      const p = el?.paragraph;
+      if (!p) continue;
+      const t = paragraphPlainText(p);
+      if (!removed.title && /^Title:\s*/i.test(t)) {
+        removed.title = true;
+        skipParagraphs.add(p);
+        continue;
+      }
+      if (!removed.date && /^Date:\s*/i.test(t)) {
+        removed.date = true;
+        skipParagraphs.add(p);
+        continue;
+      }
+      if (!removed.tags && /^Tags:\s*/i.test(t)) {
+        removed.tags = true;
+        skipParagraphs.add(p);
+        continue;
+      }
+    }
+  }
+
   const pushImageMarkdown = (md) => {
     if (!md) return;
     const last = out.length ? String(out[out.length - 1]) : "";
@@ -343,6 +382,7 @@ async function renderStructuralElementsToMarkdown({ elements, document, tab, pos
     for (const el of els) {
       
       if (el?.paragraph) {
+        if (skipParagraphs.has(el.paragraph)) continue;
         out.push(paragraphPrefix(el.paragraph));
         for (const pe of el.paragraph.elements || []) {
           if (pe?.textRun) out.push(renderTextRunToMarkdown(pe.textRun));
@@ -496,9 +536,36 @@ function createOAuthClient() {
 
 createOAuthClient();
 
+function getAuthUrl() {
+  if (!oAuth2Client) return null;
+  return oAuth2Client.generateAuthUrl({
+    access_type: "offline",
+    scope: SCOPES,
+    prompt: "consent"
+  });
+}
+
 // ----------------------------------------
 // 2. OAuth redirect endpoint
 // ----------------------------------------
+app.get("/auth", (req, res) => {
+  const url = getAuthUrl();
+  if (!url) return res.status(500).send("OAuth client not initialized.");
+  // Convenience: redirect in browser, but also usable as JSON.
+  if (String(req.query.json || "") === "1") return res.json({ authUrl: url });
+  return res.redirect(url);
+});
+
+app.get("/auth/status", (req, res) => {
+  res.json({
+    ok: true,
+    oauthReady: !!oAuth2Client,
+    tokenFileExists: fs.existsSync(TOKEN_PATH),
+    authed: !!authClient,
+    authUrl: getAuthUrl()
+  });
+});
+
 app.get("/oauth2callback", async (req, res) => {
   const code = req.query.code;
   if (!code) return res.send("No code received from Google.");
@@ -551,11 +618,13 @@ app.post("/compile", async (req, res) => {
     }
 
     const content = tab?.documentTab?.body?.content;
+    const tabPlainText = collectTextFromStructuralElements(content || []);
     const rendered = await renderStructuralElementsToMarkdown({
       elements: content || [],
       document,
       tab,
-      postId
+      postId,
+      stripMetaLines: true
     });
     const tabMarkdown = rendered.markdown;
 
@@ -578,7 +647,7 @@ app.post("/compile", async (req, res) => {
       );
     }
 
-    const extracted = extractRequiredMetaFromText(tabMarkdown);
+    const extracted = extractRequiredMetaFromText(tabPlainText);
     if (!extracted.ok) return res.status(400).json({ error: extracted.error });
 
     const postTitle = extracted.postTitle.trim();
@@ -586,7 +655,7 @@ app.post("/compile", async (req, res) => {
     const postTags = extracted.postTags.map(t => t.trim()).filter(Boolean);
 
     const postDateISO = mmddyyyyToISO(postDate);
-    let body = stripMetaHeaderLines(tabMarkdown);
+    let body = String(tabMarkdown || "").trim();
 
     // Avoid rendering the same image twice (cover image is rendered separately by the site).
     // Only pick a cover if the first image appears near the top of the body, then remove its
@@ -646,6 +715,15 @@ app.post("/compile", async (req, res) => {
 
   } catch (err) {
     console.error(err);
+    if (isInvalidGrantError(err)) {
+      // Refresh token expired/revoked; user must re-authorize.
+      authClient = null;
+      return res.status(401).json({
+        error: "Google OAuth token expired or was revoked (invalid_grant). Re-authorize and try again.",
+        details: "Open http://localhost:3001/auth to re-authorize, then retry compile. If it still fails, delete compiler/token.json and re-authorize again.",
+        authUrl: getAuthUrl()
+      });
+    }
     const status = Number(err?.status) || 500;
     res.status(status).json({
       error: status === 500 ? `compile failed: ${err?.message || String(err)}` : (err?.message || "compile failed"),
