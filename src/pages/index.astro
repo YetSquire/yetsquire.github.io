@@ -2,8 +2,6 @@
 import Layout from "../layouts/Layout.astro";
 import { TEXT_COLORS } from "../config/site";
 
-//todo- move the href funny styling to layout so everyone sees it
-//		todo- make different underlining styling
 //todo- optimize typeloop
 //todo- make a most viewed posts suggestion! along with the other two suggestions
 
@@ -362,7 +360,7 @@ const latestProject = getLatestByTag("project");
 				}
 			}
 
-			setTimeout(typeLoop, deleting ? 60 : 100);
+			setTimeout(typeLoop, deleting ? 60 : 150);
 		}
 
 		typeLoop();
