@@ -194,6 +194,18 @@ function resolveObjectMaps({ document, tab }) {
   };
 }
 
+function resolveListsMap({ document, tab }) {
+  const candidates = [
+    { source: "tab.documentTab.lists", map: tab?.documentTab?.lists },
+    { source: "tab.lists", map: tab?.lists },
+    { source: "document.lists", map: document?.lists }
+  ];
+  for (const c of candidates) {
+    if (c.map && typeof c.map === "object") return { lists: c.map, listsSource: c.source };
+  }
+  return { lists: {}, listsSource: "none" };
+}
+
 async function renderStructuralElementsToMarkdown({ elements, document, tab, postId, stripMetaLines = true }) {
   const {
     inlineObjects,
@@ -201,7 +213,7 @@ async function renderStructuralElementsToMarkdown({ elements, document, tab, pos
     positionedObjects,
     positionedObjectsSource
   } = resolveObjectMaps({ document, tab });
-  const lists = document?.lists || {};
+  const { lists, listsSource } = resolveListsMap({ document, tab });
   const inlineIdToFilename = new Map();
   const positionedIdToFilename = new Map();
   const usedInlineObjectIds = [];
@@ -225,14 +237,15 @@ async function renderStructuralElementsToMarkdown({ elements, document, tab, pos
     return { text: str.slice(0, -suffix.length), suffix };
   };
 
-  const renderTextRunToMarkdown = (textRun) => {
+  const renderTextRunToMarkdown = (textRun, continuationIndent = "") => {
     const content = textRun?.content || "";
     const { text, suffix } = splitTrailingNewlines(content);
-    if (!text) return suffix;
+    if (!text) return "";
 
     const style = textRun?.textStyle || {};
 
-    let inner = text;
+    // Tabs/spaces collapse in HTML, so emit a visible whitespace entity for tabs.
+    let inner = text.replace(/\t/g, "&emsp;");
 
     if (isMonospaceFont(style?.weightedFontFamily?.fontFamily)) {
       inner = "`" + inner.replace(/`/g, "\\`") + "`";
@@ -257,8 +270,14 @@ async function renderStructuralElementsToMarkdown({ elements, document, tab, pos
       links.push({ url, driveFileId: driveFileIdFromUri(url) });
     }
 
-    return inner + suffix;
+    const withBreaks = continuationIndent
+      ? inner.replace(/\n/g, "\n" + continuationIndent)
+      : inner;
+    return withBreaks;
   };
+
+  let lastListKey = null;
+  const listCounters = new Map();
 
   const paragraphPrefix = (paragraph) => {
     const named = paragraph?.paragraphStyle?.namedStyleType;
@@ -275,10 +294,21 @@ async function renderStructuralElementsToMarkdown({ elements, document, tab, pos
       const glyphType =
         lists?.[bullet.listId]?.listProperties?.nestingLevels?.[nestingLevel]?.glyphType || "";
       const ordered = /DECIMAL|ALPHA|ROMAN/i.test(String(glyphType));
-      const indent = "  ".repeat(Math.max(0, nestingLevel));
-      return indent + (ordered ? "1. " : "- ");
+      const indent = "    ".repeat(Math.max(0, nestingLevel));
+
+      const key = `${bullet.listId}:${nestingLevel}:${ordered ? "ol" : "ul"}`;
+      if (ordered) {
+        const next = (lastListKey === key ? (listCounters.get(key) || 0) + 1 : 1);
+        listCounters.set(key, next);
+        lastListKey = key;
+        return indent + `${next}. `;
+      }
+
+      lastListKey = key;
+      return indent + "- ";
     }
 
+    lastListKey = null;
     return "";
   };
 
@@ -291,7 +321,7 @@ async function renderStructuralElementsToMarkdown({ elements, document, tab, pos
     if (!key) return "";
     if (map.has(key)) {
       const existing = map.get(key);
-      return existing ? `![image](/images/posts/${postId}/${existing})` : "";
+      return existing ? `<img class="doc-image" alt="image" src="/images/posts/${postId}/${existing}" />` : "";
     }
 
     const contentUri = embeddedObject?.imageProperties?.contentUri;
@@ -306,7 +336,9 @@ async function renderStructuralElementsToMarkdown({ elements, document, tab, pos
     images.push(filename);
 
     const alt = toAltText(embeddedObject);
-    return `![${alt}](/images/posts/${postId}/${filename})`;
+    const widthPx = dimensionToPx(embeddedObject?.size?.width);
+    const widthAttr = widthPx ? ` width="${Math.round(widthPx)}"` : "";
+    return `<img class="doc-image" alt="${alt.replace(/\"/g, "&quot;")}" src="/images/posts/${postId}/${filename}"${widthAttr} />`;
   };
 
   const resolveInlineImageMarkdown = async (inlineObjectId) => {
@@ -368,29 +400,45 @@ async function renderStructuralElementsToMarkdown({ elements, document, tab, pos
     }
   }
 
-  const pushImageMarkdown = (md) => {
-    if (!md) return;
-    const last = out.length ? String(out[out.length - 1]) : "";
-    if (last && !last.endsWith("\n")) out.push("\n");
-    if (last && !last.endsWith("\n\n")) out.push("\n");
-    out.push(md);
-    out.push("\n\n");
-  };
-
   const walk = async (els) => {
     if (!Array.isArray(els)) return;
+    let lastWasList = false;
     for (const el of els) {
       
       if (el?.paragraph) {
         if (skipParagraphs.has(el.paragraph)) continue;
-        out.push(paragraphPrefix(el.paragraph));
-        for (const pe of el.paragraph.elements || []) {
-          if (pe?.textRun) out.push(renderTextRunToMarkdown(pe.textRun));
-          else if (pe?.inlineObjectElement?.inlineObjectId) {
-            const md = await resolveInlineImageMarkdown(pe.inlineObjectElement.inlineObjectId);
-            pushImageMarkdown(md);
+        const p = el.paragraph;
+        const isList = !!p?.bullet?.listId;
+        const prefix = paragraphPrefix(p);
+        const continuationIndent = isList ? " ".repeat(prefix.length) : "";
+
+        if (lastWasList && !isList) out.push("\n");
+        if (!lastWasList && isList && out.length) out.push("\n");
+
+        const blocks = [];
+        let current = prefix;
+        const startNewSegment = () => {
+          const trimmed = String(current).trimEnd();
+          if (trimmed && trimmed !== String(prefix).trimEnd()) blocks.push(trimmed);
+          current = isList ? continuationIndent : "";
+        };
+
+        for (const pe of p.elements || []) {
+          if (pe?.textRun) {
+            current += renderTextRunToMarkdown(pe.textRun, continuationIndent);
+            continue;
           }
-          else if (pe?.richLink?.richLinkProperties?.uri) {
+          if (pe?.inlineObjectElement?.inlineObjectId) {
+            const md = await resolveInlineImageMarkdown(pe.inlineObjectElement.inlineObjectId);
+            if (md) {
+              // Treat images as block-level so sizing/margins behave consistently.
+              startNewSegment();
+              blocks.push((isList ? continuationIndent : "") + md);
+              current = isList ? continuationIndent : "";
+            }
+            continue;
+          }
+          if (pe?.richLink?.richLinkProperties?.uri) {
             const props = pe.richLink.richLinkProperties;
             richLinks.push({
               title: props.title || null,
@@ -400,11 +448,18 @@ async function renderStructuralElementsToMarkdown({ elements, document, tab, pos
             });
           }
         }
-        for (const positionedObjectId of el.paragraph.positionedObjectIds || []) {
+
+        const finalTrimmed = String(current).trimEnd();
+        if (finalTrimmed && finalTrimmed !== String(prefix).trimEnd()) blocks.push(finalTrimmed);
+
+        for (const positionedObjectId of p.positionedObjectIds || []) {
           const md = await resolvePositionedImageMarkdown(positionedObjectId);
-          pushImageMarkdown(md);
+          if (md) blocks.push((isList ? continuationIndent : "") + md);
         }
-        if (out.length && !String(out[out.length - 1]).endsWith("\n")) out.push("\n");
+
+        const joined = blocks.join(isList ? "\n" : "\n\n");
+        if (joined) out.push(joined + (isList ? "\n" : "\n\n"));
+        lastWasList = isList;
         continue;
       }
       if (el?.table) {
@@ -431,6 +486,8 @@ async function renderStructuralElementsToMarkdown({ elements, document, tab, pos
       inlineObjectsCount: Object.keys(inlineObjects || {}).length,
       positionedObjectsSource,
       positionedObjectsCount: Object.keys(positionedObjects || {}).length,
+      listsSource,
+      listsCount: Object.keys(lists || {}).length,
       usedInlineObjectIds,
       usedPositionedObjectIds,
       missingInlineObjectIds: uniqueStrings(missingInlineObjectIds),
@@ -510,6 +567,15 @@ function driveFileIdFromUri(uri) {
 
 function escapeRegExp(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function dimensionToPx(dim) {
+  const magnitude = Number(dim?.magnitude);
+  if (!Number.isFinite(magnitude) || magnitude <= 0) return null;
+  const unit = String(dim?.unit || "").toUpperCase();
+  if (unit === "PT") return magnitude * (4 / 3);
+  if (unit === "PX") return magnitude;
+  return null;
 }
 
 // ----------------------------------------
@@ -664,11 +730,16 @@ app.post("/compile", async (req, res) => {
     if (rendered.images.length) {
       const candidate = rendered.images[0];
       const src = `/images/posts/${postId}/${candidate}`;
-      const imgRe = new RegExp(`!\\[[^\\]]*\\]\\(${escapeRegExp(src)}\\)`);
-      const idx = body.search(imgRe);
-      if (idx >= 0 && idx < 500) {
+      const mdImgRe = new RegExp(`!\\[[^\\]]*\\]\\(${escapeRegExp(src)}\\)`);
+      const htmlImgRe = new RegExp(`<img[^>]*\\ssrc=["']${escapeRegExp(src)}["'][^>]*>`, "i");
+      const mdIdx = body.search(mdImgRe);
+      const htmlIdx = body.search(htmlImgRe);
+      const idx = (mdIdx >= 0 && htmlIdx >= 0) ? Math.min(mdIdx, htmlIdx) : Math.max(mdIdx, htmlIdx);
+      if (idx >= 0 && idx < 800) {
         cover = candidate;
-        body = body.replace(imgRe, "").replace(/^\s*\n/, "");
+        if (mdIdx === idx) body = body.replace(mdImgRe, "");
+        else body = body.replace(htmlImgRe, "");
+        body = body.replace(/^\s*\n/, "");
       }
     }
 
