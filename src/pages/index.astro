@@ -1,81 +1,50 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { TEXT_COLORS } from "../config/site";
+import slugify from "slugify";
 
 //todo- optimize typeloop
 //todo- make a most viewed posts suggestion! along with the other two suggestions
 
-// Find latest post by inspecting the directory structure under src/content/posts
-// We pick the highest year directory, then highest month directory inside it,
-// then choose the newest post by frontmatter `date` inside that folder.
 const modules = import.meta.glob("../content/posts/**/*.{md,mdx}", {
 	eager: true,
 }) as Record<string, any>;
 
-type PostMeta = {
-	id: string;
-	pathname: string;
+type Featured = {
 	title: string;
-	date: string;
+	pathname: string;
 };
 
-function getLatestByTag(tag: string): PostMeta | null {
-	const allPosts = Object.entries(modules).map(([path, mod]) => {
-		const fm = mod.frontmatter || {};
-		const parts = path.split("/");
-		const filename = parts[parts.length - 1];
-
-		const year = Number(parts[parts.length - 3]) || 0;
-		const month = Number(parts[parts.length - 2]) || 0;
-		const id = fm.id || filename.replace(/\.(md|mdx)$/, "");
-		const pathname = `/post/${id}`;
-
-		return {
-			id,
-			pathname,
-			fm,
-			path,
-			year,
-			month,
-			tags: fm.tags || [],
-		};
-	});
-
-	// 1. Filter by tag
-	const taggedPosts = allPosts.filter(
-		(p) => Array.isArray(p.tags) && p.tags.includes(tag),
-	);
-
-	if (taggedPosts.length === 0) return null;
-
-	// 2. Latest year
-	const latestYear = Math.max(...taggedPosts.map((p) => p.year));
-	const inYear = taggedPosts.filter((p) => p.year === latestYear);
-
-	// 3. Latest month
-	const latestMonth = Math.max(...inYear.map((p) => p.month));
-	const inMonth = inYear.filter((p) => p.month === latestMonth);
-
-	// 4. Sort by frontmatter date
-	inMonth.sort(
-		(a, b) =>
-			new Date(b.fm.date || "1970-01-01").getTime() -
-			new Date(a.fm.date || "1970-01-01").getTime(),
-	);
-
-	const latest = inMonth[0];
-	if (!latest) return null;
-
+const posts = Object.entries(modules).map(([path, mod]) => {
+	const fm = mod.frontmatter || {};
+	const parts = path.split("/");
+	const filename = parts[parts.length - 1] || "";
+	const id = fm.id || filename.replace(/\.(md|mdx)$/, "");
 	return {
-		id: latest.id,
-		pathname: latest.pathname,
-		title: latest.fm.title || latest.id,
-		date: latest.fm.date || "",
+		id,
+		title: fm.title || id,
+		pathname: `/post/${id}`,
 	};
+});
+
+function getFeaturedByTitle(title: string): Featured | null {
+	const t = String(title || "").trim();
+	if (!t) return null;
+
+	const match = posts.find((p) => p.title === t);
+	if (match) return { title: match.title, pathname: match.pathname };
+
+	const slug = slugify(t, { lower: true, strict: true, trim: true });
+	if (!slug) return null;
+	return { title: t, pathname: `/post/${slug}` };
 }
 
-const latestBlog = getLatestByTag("blog");
-const latestProject = getLatestByTag("project");
+// Hardcode these by post title (exact match preferred).
+const FEATURED_A_TITLE = "About This Website";
+const FEATURED_B_TITLE = "";
+
+const featuredA = getFeaturedByTitle(FEATURED_A_TITLE);
+const featuredB = getFeaturedByTitle(FEATURED_B_TITLE);
 ---
 
 <Layout title="Home | My Blog">
@@ -99,19 +68,13 @@ const latestProject = getLatestByTag("project");
 					I like building <a
 						class="special-link"
 						style={`--special-link-color: ${TEXT_COLORS.Project};`}
-						href="/posts?tags=projects">wearable tech</a
+						href="/posts?tags=Project">systems</a
 					> and thinking about the <a
 						class="special-link"
 						style={`--special-link-color: ${TEXT_COLORS.Blog};`}
-						href="/posts?tags=blog">past</a
+						href="/posts?tags=Thought">past</a
 					>.
 					<br /><br />
-					<!-- You can read about that in my <a
-						class="special-link"
-						style={`--special-link-color: ${TEXT_COLORS.Post};`}
-						href="/posts">posts</a
-					>.
-					<br /><br /> -->
 					To learn more about myself, see the <a
 						class="special-link"
 						style={`--special-link-color: ${TEXT_COLORS.About};`}
@@ -122,43 +85,44 @@ const latestProject = getLatestByTag("project");
 		</section>
 	</div>
 
-	<!-- <section class="featured">
+	<section class="featured">
 		<h2>Featured</h2>
 
-		<div class="featured-grid">
-			<a
-				class="feature-card"
-				href={latestBlog ? latestBlog.pathname : "/posts"}
-			>
-				<h3>Latest Blog</h3>
-				<p class="muted">
-					{latestBlog ? latestBlog.title : "No blog yet"}
-				</p>
-			</a>
+			<div class="featured-grid">
+				<a
+					class="feature-card"
+					href={featuredA ? featuredA.pathname : "/posts"}
+				>
+					<p class="muted">
+						{featuredA ? featuredA.title : "Set FEATURED_A_TITLE"}
+					</p>
+				</a>
 
-			<a
-				class="feature-card"
-				href={latestProject ? latestProject.pathname : "/posts"}
-			>
-				<h3>Latest Project</h3>
-				<p class="muted">
-					{latestProject ? latestProject.title : "No projects yet"}
-				</p>
-			</a>
-		</div>
-	</section> -->
-</Layout>
+				<a
+					class="feature-card"
+					href={featuredB ? featuredB.pathname : "/posts"}
+				>
+					<p class="muted">
+						{featuredB ? featuredB.title : "Set FEATURED_B_TITLE"}
+					</p>
+				</a>
+			</div>
+		</section>
+	</Layout>
 
-<style>
-	.hero {
-		display: flex;
-		flex-direction: column;
-		gap: 2rem;
-		align-items: center;
-		padding: 3rem 0;
-		border-bottom: 2px solid #30363d;
-		margin-bottom: 2rem;
-	}
+	<style>
+		.hero {
+			display: flex;
+			flex-direction: column;
+			gap: 2rem;
+			align-items: center;
+			justify-content: center;
+			min-height: 100svh;
+			min-height: 100vh;
+			padding: 0;
+			border-bottom: 2px solid #30363d;
+			margin-bottom: 2rem;
+		}
 
 	.card-container {
 		display: flex;
@@ -166,13 +130,15 @@ const latestProject = getLatestByTag("project");
 		justify-content: center;
 	}
 
-	.introduction {
-		display: flex;
-		flex-direction: row;
-		align-items: center;
-		justify-content: center;
-		gap: 4rem;
-	}
+		.introduction {
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+			justify-content: center;
+			gap: 4rem;
+			width: 100%;
+			padding: 3rem 0;
+		}
 
 	.intro-text {
 		padding-top: 1.5rem;
