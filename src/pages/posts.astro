@@ -65,7 +65,7 @@ const posts = Object.entries(modules).map(([path, mod]) => {
 		cover,
 		images,
 		videos,
-		pathname: fm.pathname,
+		pathname: `/post/${id}`,
 		content: fm.content || "",
 		file: path,
 	};

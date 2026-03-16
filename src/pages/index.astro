@@ -8,12 +8,13 @@ import { TEXT_COLORS } from "../config/site";
 // Find latest post by inspecting the directory structure under src/content/posts
 // We pick the highest year directory, then highest month directory inside it,
 // then choose the newest post by frontmatter `date` inside that folder.
-const modules = import.meta.glob("../content/posts/**/*.mdx", {
+const modules = import.meta.glob("../content/posts/**/*.{md,mdx}", {
 	eager: true,
 }) as Record<string, any>;
 
 type PostMeta = {
 	id: string;
+	pathname: string;
 	title: string;
 	date: string;
 };
@@ -26,10 +27,12 @@ function getLatestByTag(tag: string): PostMeta | null {
 
 		const year = Number(parts[parts.length - 3]) || 0;
 		const month = Number(parts[parts.length - 2]) || 0;
-		const id = fm.id || filename.replace(/\.mdx$/, "");
+		const id = fm.id || filename.replace(/\.(md|mdx)$/, "");
+		const pathname = `/post/${id}`;
 
 		return {
 			id,
+			pathname,
 			fm,
 			path,
 			year,
@@ -65,6 +68,7 @@ function getLatestByTag(tag: string): PostMeta | null {
 
 	return {
 		id: latest.id,
+		pathname: latest.pathname,
 		title: latest.fm.title || latest.id,
 		date: latest.fm.date || "",
 	};
@@ -108,7 +112,7 @@ const latestProject = getLatestByTag("project");
 						href="/posts">posts</a
 					>.
 					<br /><br /> -->
-					To learn more about myself and this website, see the <a
+					To learn more about myself, see the <a
 						class="special-link"
 						style={`--special-link-color: ${TEXT_COLORS.About};`}
 						href="/about">About</a
@@ -118,13 +122,13 @@ const latestProject = getLatestByTag("project");
 		</section>
 	</div>
 
-	<section class="featured">
+	<!-- <section class="featured">
 		<h2>Featured</h2>
 
 		<div class="featured-grid">
 			<a
 				class="feature-card"
-				href={latestBlog ? `/post/${latestBlog.id}` : "/posts"}
+				href={latestBlog ? latestBlog.pathname : "/posts"}
 			>
 				<h3>Latest Blog</h3>
 				<p class="muted">
@@ -134,21 +138,15 @@ const latestProject = getLatestByTag("project");
 
 			<a
 				class="feature-card"
-				href={latestProject ? `/post/${latestProject.id}` : "/posts"}
+				href={latestProject ? latestProject.pathname : "/posts"}
 			>
 				<h3>Latest Project</h3>
 				<p class="muted">
 					{latestProject ? latestProject.title : "No projects yet"}
 				</p>
 			</a>
-
-			<!-- most viewed project -->
-			<!-- <a class="feature-card" href="/posts?tags=projects">
-				<h3>Projects</h3>
-				<p class="muted">View posts tagged "projects"</p>
-			</a> -->
 		</div>
-	</section>
+	</section> -->
 </Layout>
 
 <style>
@@ -193,7 +191,7 @@ const latestProject = getLatestByTag("project");
 		font-size: 2.5rem;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: #ffffff;
+		color: #000000;
 		text-align: center;
 		margin-bottom: 2rem;
 		font-weight: 700;
@@ -212,7 +210,7 @@ const latestProject = getLatestByTag("project");
 	.cta-button {
 		display: inline-block;
 		background-color: #58a6ff;
-		color: white;
+		color: black;
 		padding: 0.75rem 1.5rem;
 		border-radius: 4px;
 		text-decoration: none;

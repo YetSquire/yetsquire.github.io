@@ -71,9 +71,10 @@ function compile(blogDraftName, manualDate = null) {
 
   const index = loadIndex();
   const title = frontmatter.title;
+  const slug = slugify(title, { lower: true, strict: true, trim: true });
 
   if (!index[title]) {
-    const id = `${Object.keys(index).length}-${slugify(title, { lower: true })}`;
+    const id = slug;
     index[title] = {
       id,
       date: manualDate || new Date().toISOString().slice(0, 10)
@@ -90,7 +91,7 @@ function compile(blogDraftName, manualDate = null) {
   const tagsArray = frontmatter.tags
     ? frontmatter.tags.trim().split(/\s+/)   // split on whitespace
     : [];
-    const tagsYaml = tagsArray.map(t => `  - ${t}`).join("\n");
+  const tagsYaml = tagsArray.map(t => `  - ${t}`).join("\n");
 
   const output = `---
 id: "${id}"

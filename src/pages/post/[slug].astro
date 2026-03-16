@@ -2,13 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 
 const { params } = Astro;
-const id = params.id;
-
-const parseDateOnlyAsLocalDate = (value: string): Date => {
-    const m = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-    return new Date(value);
-};
+const slug = params.slug;
 
 // load all markdown posts
 const modules = import.meta.glob('../../content/posts/**/*.md', { eager: true }) as Record<string, any>;
@@ -19,18 +13,19 @@ for (const [path, m] of Object.entries(modules)) {
     const fm = m.frontmatter || {};
     const parts = path.split('/');
     const filename = parts[parts.length - 1].replace(/\.md$/, '');
-    if (fm.id === id || filename === id) {
+    if (fm.id === slug || filename === slug) {
         mod = m;
         break;
     }
 }
 
 if (!mod) {
-    throw new Error(`Post not found: ${id}`);
+    throw new Error(`Post not found: ${slug}`);
 }
 
 const fm = mod.frontmatter || {};
 const Content = mod.default;
+const assetId = fm.id || slug;
 
 export async function getStaticPaths() {
     const modules = import.meta.glob('../../content/posts/**/*.md', { eager: true }) as Record<string, any>;
@@ -38,8 +33,8 @@ export async function getStaticPaths() {
         const fm = mod.frontmatter || {};
         const parts = path.split('/');
         const filename = parts[parts.length - 1].replace(/\.md$/, '');
-        const postId = fm.id || filename;
-        return { params: { id: postId } };
+        const postSlug = fm.id || filename;
+        return { params: { slug: postSlug } };
     });
     return paths;
 }
@@ -48,7 +43,7 @@ export async function getStaticPaths() {
 const routeImagePath = (imagePath: string): string => {
     if (!imagePath) return '';
     if (imagePath.startsWith('/') || imagePath.startsWith('http')) return imagePath;
-    return `/images/posts/${id}/${imagePath}`;
+    return `/images/posts/${assetId}/${imagePath}`;
 };
 
 const cover = fm.cover || fm.image ? (routeImagePath(fm.cover || fm.image)) : '';
@@ -56,7 +51,7 @@ const images = (Array.isArray(fm.images) ? fm.images : (fm.images ? [fm.images] 
 const videos = Array.isArray(fm.videos) ? fm.videos : (fm.videos ? [fm.videos] : []);
 ---
 
-<Layout title={fm.title || id}>
+<Layout title={fm.title || slug}>
     <article class="post-full">
         {cover && <img class="cover" src={cover} alt={fm.title} />}
 

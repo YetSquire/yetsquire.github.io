@@ -4,6 +4,7 @@ const { google } = require("googleapis");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const slugify = require("slugify");
 
 const app = express();
 
@@ -31,18 +32,86 @@ function httpError(status, message, details) {
   return err;
 }
 
-function uuidFromTabId(tabId) {
-  const hash = crypto.createHash("sha256").update(`docs-tab:${String(tabId)}`).digest();
-  const bytes = Buffer.from(hash.subarray(0, 16));
-  bytes[6] = (bytes[6] & 0x0f) | 0x50; // version 5
-  bytes[8] = (bytes[8] & 0x3f) | 0x80; // RFC4122 variant
-  const hex = bytes.toString("hex");
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
 function stableHexId(input, length = 12) {
   const hex = crypto.createHash("sha256").update(String(input)).digest("hex");
   return hex.slice(0, length);
+}
+
+function slugFromTitle(title) {
+  const slug = slugify(String(title || ""), {
+    lower: true,
+    strict: true,
+    trim: true
+  });
+  return slug || "";
+}
+
+function scrubDocExportMetaHtml(html) {
+  const raw = String(html || "");
+  const headLimit = 12000;
+  let head = raw.slice(0, headLimit);
+  const tail = raw.slice(headLimit);
+
+  const replaceFirst = (re, replacement) => {
+    head = head.replace(re, replacement);
+  };
+
+  // Clean the metadata emitted by Docs export near the top of the document:
+  // - Remove "Title: " (first occurrence)
+  // - Remove "Date: " (first occurrence)
+  // - Remove the tags section entirely
+  replaceFirst(/Title:\s*/i, "");
+  replaceFirst(/Date:\s*/i, "");
+
+  // Tags can appear as a single line or a "Tags:" paragraph followed by a list.
+  // Ensure we only remove a single <p> block (do not span across multiple paragraphs).
+  replaceFirst(/<p\b[^>]*>(?:(?!<\/p>)[\s\S])*?\bTags:\s*(?:(?!<\/p>)[\s\S])*?<\/p>\s*/i, "");
+  replaceFirst(/<p\b[^>]*>(?:(?!<\/p>)[\s\S])*?\bTags:\s*<\/p>\s*(<(ul|ol)\b[\s\S]*?<\/\2>\s*)/i, "");
+
+  return head + tail;
+}
+
+function readYamlFrontmatter(text) {
+  const m = String(text || "").match(/^---\s*\n([\s\S]*?)\n---\s*\n/);
+  if (!m) return {};
+  const fm = {};
+  for (const line of m[1].split("\n")) {
+    const idx = line.indexOf(":");
+    if (idx === -1) continue;
+    const key = line.slice(0, idx).trim();
+    const raw = line.slice(idx + 1).trim();
+    const value = raw.replace(/^"(.*)"$/, "$1");
+    if (key) fm[key] = value;
+  }
+  return fm;
+}
+
+function walkMarkdownFiles(dir) {
+  const out = [];
+  if (!fs.existsSync(dir)) return out;
+  const stack = [dir];
+  while (stack.length) {
+    const current = stack.pop();
+    const entries = fs.readdirSync(current, { withFileTypes: true });
+    for (const ent of entries) {
+      const full = path.join(current, ent.name);
+      if (ent.isDirectory()) stack.push(full);
+      else if (ent.isFile() && (ent.name.endsWith(".md") || ent.name.endsWith(".mdx"))) out.push(full);
+    }
+  }
+  return out;
+}
+
+function slugIsTakenByOtherSource(postsDir, slug, sourceTabId) {
+  if (!slug) return false;
+  for (const filePath of walkMarkdownFiles(postsDir)) {
+    const text = fs.readFileSync(filePath, "utf8");
+    const fm = readYamlFrontmatter(text);
+    const existingId = fm.id || path.basename(filePath).replace(/\.(md|mdx)$/, "");
+    const existingSourceTabId = fm.sourceTabId || "";
+    if (existingId === slug && String(existingSourceTabId) !== String(sourceTabId)) return true;
+  }
+  return false;
 }
 
 function isValidMMDDYYYY(mmddyyyy) {
@@ -868,7 +937,6 @@ app.post("/compile", async (req, res) => {
       });
     }
 
-    const postId = uuidFromTabId(tabId);
     const candidates = tabIdCandidates(tabId);
     const tab = tabs.find(t => candidates.includes(t?.tabProperties?.tabId));
 
@@ -883,6 +951,22 @@ app.post("/compile", async (req, res) => {
     const tabPlainText = collectTextFromStructuralElements(content || []);
     const tabTitle = tab?.tabProperties?.title || "";
     const allTabTitles = flattenTabs(tabs).map(t => t.title).filter(Boolean);
+
+    const extracted = extractRequiredMetaFromText(tabPlainText);
+    if (!extracted.ok) return res.status(400).json({ error: extracted.error });
+
+    const postTitle = extracted.postTitle.trim();
+    const postDate = extracted.postDate.trim();
+    const postTags = extracted.postTags.map(t => t.trim()).filter(Boolean);
+
+    const root = path.resolve(__dirname, "..");
+    const outDir = path.join(root, "src", "content", "posts");
+
+    const baseSlug = slugFromTitle(postTitle) || stableHexId(`${docId}:${tabId}`, 12);
+    const slug = slugIsTakenByOtherSource(outDir, baseSlug, tabId)
+      ? `${baseSlug}-${stableHexId(`${docId}:${tabId}`, 6)}`
+      : baseSlug;
+    const postId = slug;
 
     let renderMode = "docs_export_html";
     let rendered = null;
@@ -923,7 +1007,7 @@ app.post("/compile", async (req, res) => {
           document,
           tab,
           postId,
-          stripMetaLines: false
+          stripMetaLines: true
         });
         tabHtml = `<div class="doc-export">${rendered.html}</div>`;
         exportedDebug = { exportedVia: "none", error: e2?.message || e?.message || String(e2 || e) };
@@ -949,15 +1033,10 @@ app.post("/compile", async (req, res) => {
       );
     }
 
-    const extracted = extractRequiredMetaFromText(tabPlainText);
-    if (!extracted.ok) return res.status(400).json({ error: extracted.error });
-
-    const postTitle = extracted.postTitle.trim();
-    const postDate = extracted.postDate.trim();
-    const postTags = extracted.postTags.map(t => t.trim()).filter(Boolean);
-
     const postDateISO = mmddyyyyToISO(postDate);
     let body = String(tabHtml || "").trim();
+
+    const pathname = `/post/${postId}`;
 
     // Avoid rendering the same image twice (cover image is rendered separately by the site).
     // Only pick a cover if the first image appears near the top of the body, then remove its
@@ -979,10 +1058,12 @@ app.post("/compile", async (req, res) => {
       }
     }
 
+    body = scrubDocExportMetaHtml(body);
+
     const frontmatter = [
       "---",
       `id: "${postId}"`,
-      `pathname: "/post/${postId}"`,
+      `pathname: "${pathname}"`,
       `sourceDocId: "${docId}"`,
       `sourceTabId: "${tabId}"`,
       `title: "${postTitle.replace(/\"/g, '\\"')}"`,
@@ -996,8 +1077,6 @@ app.post("/compile", async (req, res) => {
 
     const postMarkdown = `${frontmatter}\n\n${body}\n`;
 
-    const root = path.resolve(__dirname, "..");
-    const outDir = path.join(root, "src", "content", "posts");
     const outPath = path.join(outDir, `${postId}.md`);
     fs.mkdirSync(outDir, { recursive: true });
     fs.writeFileSync(outPath, postMarkdown, "utf8");
@@ -1006,6 +1085,7 @@ app.post("/compile", async (req, res) => {
       ok: true,
       message: `Wrote post ${postId}`,
       postId,
+      pathname,
       outPath,
       postTitle,
       postDate,
