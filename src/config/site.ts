@@ -1,7 +1,7 @@
 export const TEXT_COLORS = {
-    Home: "#19b701ff",
+    // Home: "#19b701ff",
     About: "#2f97feff",
     // Post: "#b3ff00ff",
-    Blog: "#be74ffff",
+    Blog: "#19b701ff",
     Project: "rgb(175, 40, 0)",
 };

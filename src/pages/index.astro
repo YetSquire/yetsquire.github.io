@@ -1,6 +1,8 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { TEXT_COLORS } from "../config/site";
+import PostCard from "../components/PostCard.astro";
+import initPostsCode from "../scripts/init_posts.js?raw";
 import slugify from "slugify";
 
 //todo- optimize typeloop
@@ -15,14 +17,54 @@ type Featured = {
 	pathname: string;
 };
 
+const parseDateOnlyAsLocalDate = (value: string): Date => {
+	const m = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+	if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+	return new Date(value);
+};
+
 const posts = Object.entries(modules).map(([path, mod]) => {
 	const fm = mod.frontmatter || {};
-	const parts = path.split("/");
-	const filename = parts[parts.length - 1] || "";
-	const id = fm.id || filename.replace(/\.(md|mdx)$/, "");
+	const pathEnd = path.split("/");
+	const id = fm.id || pathEnd[pathEnd.length - 1].replace(/\.(md|mdx)$/, "");
+
+	const routeImagePath = (imagePath: string): string => {
+		if (!imagePath) return "";
+		if (imagePath.startsWith("/") || imagePath.startsWith("http"))
+			return imagePath;
+		return `/images/posts/${id}/${imagePath}`;
+	};
+
+	const coverSource = fm.cover || fm.image || "";
+	const cover = coverSource ? routeImagePath(coverSource) : "";
+
+	const fmImages = Array.isArray(fm.images)
+		? fm.images.slice()
+		: fm.images
+			? [fm.images]
+			: [];
+	if (fm.image && !fmImages.includes(fm.image)) fmImages.unshift(fm.image);
+	const images = fmImages
+		.map((img: string) => routeImagePath(img))
+		.filter(Boolean);
+
+	const fmVideos = Array.isArray(fm.videos)
+		? fm.videos.slice()
+		: fm.videos
+			? [fm.videos]
+			: [];
+	if (fm.video && !fmVideos.includes(fm.video)) fmVideos.unshift(fm.video);
+	const videos = fmVideos.filter(Boolean);
+
 	return {
 		id,
 		title: fm.title || id,
+		description: fm.description || "",
+		date: fm.date || "1970-01-01",
+		tags: fm.tags || [],
+		cover,
+		images,
+		videos,
 		pathname: `/post/${id}`,
 	};
 });
@@ -45,16 +87,21 @@ const FEATURED_B_TITLE = "";
 
 const featuredA = getFeaturedByTitle(FEATURED_A_TITLE);
 const featuredB = getFeaturedByTitle(FEATURED_B_TITLE);
+
+const allTags = [...new Set(posts.flatMap((post) => post.tags))].sort();
+const sortedPosts = posts.sort(
+	(a, b) =>
+		parseDateOnlyAsLocalDate(b.date).getTime() -
+		parseDateOnlyAsLocalDate(a.date).getTime(),
+);
 ---
 
 <Layout title="Home | My Blog">
+	<script is:inline set:html={initPostsCode}></script>
+
 	<div class="hero">
 		<section class="introduction">
-			<div
-				class="hero-image-swap"
-				tabindex="0"
-				role="img"
-			></div>
+			<div class="hero-image-swap" tabindex="0" role="img"></div>
 
 			<div class="intro-text">
 				<p class="typed-subtitle">
@@ -62,63 +109,102 @@ const featuredB = getFeaturedByTitle(FEATURED_B_TITLE);
 					<span class="cursor">|</span>
 				</p>
 				<p>
-					My name is Andy, developer, history nerd, and aspiring
+					My name is Andy, XR developer, history nerd, and aspiring
 					human.
 					<br /><br />
 					I like building <a
 						class="special-link"
 						style={`--special-link-color: ${TEXT_COLORS.Project};`}
-						href="/posts?tags=Project">systems</a
+						href="/"
+						data-post-tag="Project">systems</a
 					> and thinking about the <a
 						class="special-link"
 						style={`--special-link-color: ${TEXT_COLORS.Blog};`}
-						href="/posts?tags=Thought">world</a
+						href="/"
+						data-post-tag="Thought">world</a
 					>.
 					<br /><br />
-					To learn more about myself, see the <a
+					You can scroll down, or learn <a
 						class="special-link"
 						style={`--special-link-color: ${TEXT_COLORS.About};`}
-						href="/about">About</a
-					> page.
+						href="/about">about</a
+					> me.
 				</p>
 			</div>
 		</section>
 	</div>
 
-	<section class="featured">
+	<!-- <section class="featured">
 		<h2>Featured</h2>
 
-			<div class="featured-grid">
-				<a
-					class="feature-card"
-					href={featuredA ? featuredA.pathname : "/posts"}
-				>
-					<p class="muted">
-						{featuredA ? featuredA.title : "Set FEATURED_A_TITLE"}
-					</p>
-				</a>
+		<div class="featured-grid">
+			<a class="feature-card" href={featuredA ? featuredA.pathname : "/"}>
+				<p class="muted">
+					{featuredA ? featuredA.title : "Set FEATURED_A_TITLE"}
+				</p>
+			</a>
 
-				<a
-					class="feature-card"
-					href={featuredB ? featuredB.pathname : "/posts"}
+			<a class="feature-card" href={featuredB ? featuredB.pathname : "/"}>
+				<p class="muted">
+					{featuredB ? featuredB.title : "Set FEATURED_B_TITLE"}
+				</p>
+			</a>
+		</div>
+	</section> -->
+
+	<section class="posts-section" id="posts">
+		<h2>Posts</h2>
+
+		<div class="filters">
+			<h3>Filter by Tags:</h3>
+			<div class="tag-buttons">
+				<button
+					id="tag-all"
+					class="filter-tag active"
 				>
-					<p class="muted">
-						{featuredB ? featuredB.title : "Set FEATURED_B_TITLE"}
-					</p>
-				</a>
+					All
+				</button>
+				{
+					allTags.map((tag) => (
+						<button
+							class="filter-tag"
+							data-tag={tag}
+						>
+							{tag}
+						</button>
+					))
+				}
 			</div>
-		</section>
-	</Layout>
+		</div>
+
+		<div class="posts-count">
+			<p>
+				Showing {sortedPosts.length} post{sortedPosts.length !== 1 ? "s" : ""}
+			</p>
+		</div>
+
+		<div class="posts-list" id="posts-list">
+			{
+				sortedPosts.length > 0 ? (
+					sortedPosts.map((post) => <PostCard post={post} />)
+				) : (
+					<p class="no-posts">No posts found with the selected tags.</p>
+				)
+			}
+		</div>
+	</section>
+</Layout>
 
 	<style>
-			.hero {
-				display: flex;
-				flex-direction: column;
-				gap: 2rem;
-				align-items: center;
-				padding: 3rem 0;
-				margin-bottom: 2rem;
-			}
+		.hero {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			min-height: 100vh;
+			padding: clamp(2rem, 6vh, 4rem) 0 clamp(4rem, 16vh, 10rem) 0;
+			gap: 2.5rem;
+		}
 
 	.card-container {
 		display: flex;
@@ -132,6 +218,7 @@ const featuredB = getFeaturedByTitle(FEATURED_B_TITLE);
 			align-items: center;
 			justify-content: center;
 			gap: 4rem;
+			width: 100%;
 		}
 
 	.intro-text {
@@ -256,6 +343,63 @@ const featuredB = getFeaturedByTitle(FEATURED_B_TITLE);
 	.muted {
 		color: #8b949e;
 		font-size: 0.95rem;
+	}
+
+	.posts-section {
+		margin-top: 3rem;
+	}
+
+	.filters {
+		padding: 0.5rem;
+		border-radius: 4px;
+		margin-bottom: 0.5rem;
+	}
+
+	.filters h3 {
+		margin-bottom: 1rem;
+		font-size: 1rem;
+	}
+
+	.tag-buttons {
+		display: flex;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.filter-tag {
+		padding: 0.5rem 1rem;
+		background-color: white;
+		border: 2px solid #ddd;
+		border-radius: 20px;
+		color: #333;
+		cursor: pointer;
+		transition: all 0.2s;
+		font-size: 0.9rem;
+	}
+
+	.filter-tag:hover {
+		border-color: #0066cc;
+		color: #0066cc;
+	}
+
+	.filter-tag.active {
+		background-color: #0066cc;
+		border-color: #0066cc;
+		color: white;
+	}
+
+	.posts-count {
+		margin: 0.5rem;
+		margin-bottom: 2rem;
+		color: #666;
+		font-size: 0.95rem;
+	}
+
+	.no-posts {
+		text-align: center;
+		color: #999;
+		padding: 2rem;
+		font-style: italic;
 	}
 </style>
 
