@@ -245,6 +245,8 @@ const sortedPosts = posts.sort(
 	}
 
 	.cursor {
+		display: inline-block;
+		opacity: 1;
 		animation: blink 1s step-end infinite;
 	}
 
@@ -437,34 +439,65 @@ const sortedPosts = posts.sort(
 		const el = document.getElementById("typed-text");
 		if (!el) return;
 
+		const container =
+			el.closest(".typed-subtitle") || el.parentElement || el;
+		if (!container) return;
+		if (container.dataset.typedInit === "1") return;
+		container.dataset.typedInit = "1";
+
 		let wordIndex = 0;
 		let charIndex = 0;
 		let deleting = false;
+		let running = false;
+		let timerId = null;
 
-		function typeLoop() {
-			const word = words[wordIndex];
+		const schedule = (ms) => {
+			if (timerId) clearTimeout(timerId);
+			timerId = setTimeout(tick, ms);
+		};
+
+		function tick() {
+			if (!running) return;
+
+			const word = String(words[wordIndex] || "");
+			const chars = [...word];
 
 			if (!deleting) {
-				const chars = [...word];
-				el.textContent = chars.slice(0, charIndex++).join("");
-				if (charIndex === word.length) {
-					setTimeout(() => {
-						deleting = true;
-					}, 1200);
+				charIndex = Math.min(charIndex + 1, chars.length);
+				el.textContent = chars.slice(0, charIndex).join("");
+				if (charIndex >= chars.length) { //only the pivot back
+					deleting = true;
+					schedule(2000);
+					return;
 				}
-			} else {
-				const chars = [...word];
-				el.textContent = chars.slice(0, charIndex--).join("");
-				if (charIndex <= 0) {
-					deleting = false;
-					wordIndex = (wordIndex + 1) % words.length;
-					charIndex = 0;
-				}
+				schedule(150);
+				return;
 			}
 
-			setTimeout(typeLoop, deleting ? 60 : 150);
+			charIndex = Math.max(charIndex - 1, 0);
+			el.textContent = chars.slice(0, charIndex).join("");
+			if (charIndex <= 0) {
+				deleting = false;
+				wordIndex = (wordIndex + 1) % words.length;
+				schedule(1000);
+				return;
+			}
+			schedule(150);
 		}
 
-		typeLoop();
+		const start = () => {
+			if (running) return;
+			running = true;
+			tick();
+		};
+
+		const stop = () => {
+			running = false;
+			if (timerId) clearTimeout(timerId);
+			timerId = null;
+		};
+
+		container.addEventListener("mouseenter", start);
+		container.addEventListener("mouseleave", stop);
 	}
 </script>
