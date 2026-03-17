@@ -19,6 +19,7 @@ const TOKEN_PATH = "token.json";
 
 let authClient = null;
 let oAuth2Client = null;
+let authMode = "none"; // "service_account" | "oauth" | "none"
 
 function isInvalidGrantError(err) {
   const e = err?.response?.data?.error || err?.error || err?.message || "";
@@ -861,11 +862,47 @@ function createOAuthClient() {
     const token = JSON.parse(fs.readFileSync(TOKEN_PATH));
     oAuth2Client.setCredentials(token);
     authClient = oAuth2Client;
+    authMode = "oauth";
     console.log("Using saved token.json");
   }
 }
 
-createOAuthClient();
+async function createServiceAccountClientFromEnv() {
+  const rawJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (rawJson && String(rawJson).trim()) {
+    const credentials = JSON.parse(String(rawJson));
+    const auth = new google.auth.GoogleAuth({ credentials, scopes: SCOPES });
+    const client = await auth.getClient();
+    return client || null;
+  }
+
+  const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (keyFile && fs.existsSync(String(keyFile))) {
+    const auth = new google.auth.GoogleAuth({ keyFile: String(keyFile), scopes: SCOPES });
+    const client = await auth.getClient();
+    return client || null;
+  }
+
+  return null;
+}
+
+async function initAuthClient() {
+  const svc = await createServiceAccountClientFromEnv();
+  if (svc) {
+    authClient = svc;
+    authMode = "service_account";
+    console.log("Using Google service account credentials.");
+    return;
+  }
+
+  if (fs.existsSync("credentials.json")) {
+    createOAuthClient();
+    if (authClient) authMode = "oauth";
+    return;
+  }
+
+  console.warn("No Google auth configured. Set GOOGLE_SERVICE_ACCOUNT_JSON or add compiler/credentials.json + compiler/token.json.");
+}
 
 function getAuthUrl() {
   if (!oAuth2Client) return null;
@@ -893,8 +930,13 @@ app.get("/auth/status", (req, res) => {
     oauthReady: !!oAuth2Client,
     tokenFileExists: fs.existsSync(TOKEN_PATH),
     authed: !!authClient,
+    authMode,
     authUrl: getAuthUrl()
   });
+});
+
+app.get("/health", (req, res) => {
+  res.json({ ok: true, authed: !!authClient, authMode });
 });
 
 app.get("/oauth2callback", async (req, res) => {
@@ -906,6 +948,7 @@ app.get("/oauth2callback", async (req, res) => {
     oAuth2Client.setCredentials(tokens);
     fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens));
     authClient = oAuth2Client;
+    authMode = "oauth";
     res.send("Authorization complete! You can close this tab.");
     console.log("OAuth token saved.");
   } catch (err) {
@@ -1122,6 +1165,13 @@ app.post("/compile", async (req, res) => {
 // ----------------------------------------
 // 4. Start server
 // ----------------------------------------
-app.listen(3001, () => {
-  console.log("Compile server running on http://localhost:3001");
+(async () => {
+  await initAuthClient();
+  const port = Number(process.env.PORT) || 3001;
+  app.listen(port, () => {
+    console.log(`Compile server running on http://localhost:${port}`);
+  });
+})().catch((err) => {
+  console.error("Failed to start compiler server:", err);
+  process.exit(1);
 });

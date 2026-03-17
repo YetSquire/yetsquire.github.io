@@ -3,17 +3,19 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
+    "dev": "node src/scripts/sync_public_images.js && astro dev",
+    "build": "node src/scripts/sync_public_images.js && astro build",
     "preview": "astro preview",
     "astro": "astro",
     "compile": "node src/scripts/compile_post.js"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^12.6.13",
     "astro": "^5.16.6",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "googleapis": "^171.4.0",
+    "jose": "^5.10.0",
     "slugify": "^1.6.6"
   },
   "description": "```sh npm create astro@latest -- --template minimal ```",

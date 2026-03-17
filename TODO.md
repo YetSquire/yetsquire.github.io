@@ -1,4 +1,5 @@
 Shrink the width of pages
+Change main page to be all one page
 FIGURE OUT DEPLOYMENT
 
 Gaussian splat.. Myself?
