@@ -1,3 +1,4 @@
+Shrink the width of pages
 FIGURE OUT DEPLOYMENT
 
 Gaussian splat.. Myself?

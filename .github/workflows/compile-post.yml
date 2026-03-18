@@ -1,0 +1,104 @@
+name: Compile post
+
+on:
+  workflow_dispatch:
+    inputs:
+      doc_id:
+        description: Google Doc ID
+        required: true
+        type: string
+      tab_id:
+        description: Tab ID (e.g. t.abc123)
+        required: true
+        type: string
+      debug:
+        description: Include debug info (0/1)
+        required: false
+        default: "0"
+        type: string
+      requested_by:
+        description: Who triggered the compile (for audit)
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: compiler/package-lock.json
+
+      - name: Install compiler deps
+        run: npm ci
+        working-directory: compiler
+
+      - name: Write Google service account key
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$GOOGLE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "Missing secrets.GOOGLE_SERVICE_ACCOUNT_JSON" >&2
+            exit 1
+          fi
+          echo "$GOOGLE_SERVICE_ACCOUNT_JSON" > /tmp/gsa.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gsa.json" >> "$GITHUB_ENV"
+
+      - name: Start compiler server
+        run: |
+          node server.js > /tmp/compiler.log 2>&1 &
+          echo $! > /tmp/compiler.pid
+        working-directory: compiler
+
+      - name: Wait for compiler
+        run: |
+          for i in {1..40}; do
+            if curl -fsS http://127.0.0.1:3001/health >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Compiler did not become healthy." >&2
+          sed -n '1,200p' /tmp/compiler.log || true
+          exit 1
+
+      - name: Compile
+        env:
+          DOC_ID: ${{ inputs.doc_id }}
+          TAB_ID: ${{ inputs.tab_id }}
+          DEBUG: ${{ inputs.debug }}
+        run: |
+          curl -fsS -X POST http://127.0.0.1:3001/compile \
+            -H "Content-Type: application/json" \
+            -d "{\"docId\":\"$DOC_ID\",\"tabId\":\"$TAB_ID\",\"debug\":$DEBUG}"
+
+      - name: Stop compiler
+        if: always()
+        run: |
+          if [ -f /tmp/compiler.pid ]; then
+            kill "$(cat /tmp/compiler.pid)" || true
+          fi
+
+      - name: Commit and push
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Compile post from Google Doc"
+          git push
