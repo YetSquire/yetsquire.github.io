@@ -1,8 +1,18 @@
 ---
+import { TEXT_COLORS } from "../config/site"; 
+
 const { post } = Astro.props;
 const displayImage = post.cover;
 
 const dataTags = (post.tags || []).join(',');
+
+let color = TEXT_COLORS.Blog; // default color
+
+if (post.tags.includes('About')) {
+	color = TEXT_COLORS.About;
+} else if (post.tags.includes('Project')) {
+	color = TEXT_COLORS.Project;
+}
 
 const parseDateOnlyAsLocalDate = (value: string): Date => {
 	const m = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -14,7 +24,9 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 <article class="post-card" data-tags={dataTags} data-id={post.id}>
 	<header class="post-card__header">
 		<div class="post-card__heading">
-			<h2 class="post-card__title">
+			<h2 class="post-card__title"
+				style={`color: ${color};`}
+			>
 				<a href={post.pathname}>{post.title}</a>
 			</h2>
 			<div class="tags">
@@ -49,7 +61,7 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 
 	.post-card__header {
 		display: flex;
-		align-items: baseline;
+		align-items: center;
 		justify-content: space-between;
 		gap: 1rem;
 		flex-wrap: wrap;
@@ -58,8 +70,8 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 
 	.post-card__heading {
 		display: flex;
-		align-items: baseline;
-		gap: 0.75rem;
+		align-items: center;
+		gap: 1rem;
 		flex-wrap: wrap;
 		min-width: 0;
 	}
@@ -71,7 +83,7 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 
 	.post-card__title a {
 		text-decoration: none;
-		color: #0066cc;
+		color: inherit;
 	}
 
 	.post-card__title a:hover {
@@ -79,6 +91,8 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 	}
 
 	.date {
+		position: relative;
+		top: -5px; /* sad :( */
 		color: #666;
 		font-size: 0.9rem;
 		margin-left: auto;
@@ -98,13 +112,6 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 	img {
 		max-width: 100%;
 		height: auto;
-		border-radius: 4px;
-		margin-bottom: 1rem;
-	}
-
-	.video-container {
-		background-color: #f0f0f0;
-		padding: 1rem;
 		border-radius: 4px;
 		margin-bottom: 1rem;
 	}
@@ -144,11 +151,5 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 		object-fit: cover;
 		border-radius: 4px;
 		border: 1px solid #ddd;
-	}
-
-	.video-container video {
-		max-width: 100%;
-		height: auto;
-		border-radius: 4px;
 	}
 </style>
