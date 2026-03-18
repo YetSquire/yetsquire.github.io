@@ -17,13 +17,94 @@ type Featured = {
 	pathname: string;
 };
 
+const decodeHtmlEntities = (value: string): string => {
+	return String(value || "")
+		.replace(/&nbsp;/g, " ")
+		.replace(/&amp;/g, "&")
+		.replace(/&quot;/g, '"')
+		.replace(/&#39;/g, "'")
+		.replace(/&lt;/g, "<")
+		.replace(/&gt;/g, ">")
+		.replace(/&rsquo;|&lsquo;/g, "'")
+		.replace(/&rdquo;|&ldquo;/g, '"');
+};
+
+const stripHtml = (value: string): string =>
+	String(value || "").replace(/<[^>]*>/g, "");
+
+const normalizeWhitespace = (value: string): string =>
+	String(value || "")
+		.replace(/\s+/g, " ")
+		.trim();
+
+const extractFirstSegment = async (
+	mod: any,
+	title: string,
+): Promise<string> => {
+	let source = "";
+
+	try {
+		if (typeof mod?.compiledContent === "function") {
+			source = await mod.compiledContent();
+		} else if (typeof mod?.rawContent === "function") {
+			source = mod.rawContent();
+		}
+	} catch {
+		// ignore
+	}
+
+	if (!source && typeof mod?.rawContent === "function") {
+		try {
+			source = mod.rawContent();
+		} catch {
+			// ignore
+		}
+	}
+
+	source = String(source || "").replace(/^---[\s\S]*?---\s*/m, "");
+	if (!source) return "";
+
+	// Prefer the first meaningful <p> when content is HTML-exported.
+	const titleLower = String(title || "").trim().toLowerCase();
+	const pMatches = Array.from(source.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi));
+	for (const match of pMatches) {
+		const raw = match?.[1] || "";
+		const text = normalizeWhitespace(decodeHtmlEntities(stripHtml(raw)));
+		if (!text) continue;
+		if (titleLower && text.toLowerCase() === titleLower) continue;
+		if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(text)) continue;
+		if (/^\d{4}-\d{2}-\d{2}$/.test(text)) continue;
+		if (text.length < 25 && !/[.!?]/.test(text)) continue;
+		return text;
+	}
+
+	// Markdown fallback: first non-empty paragraph-ish chunk.
+	const cleaned = source
+		.replace(/<style\b[\s\S]*?<\/style>/gi, "")
+		.replace(/```[\s\S]*?```/g, "")
+		.trim();
+
+	const chunks = cleaned
+		.split(/\n\s*\n/)
+		.map((c) => normalizeWhitespace(decodeHtmlEntities(stripHtml(c))))
+		.filter(Boolean);
+
+	for (const chunk of chunks) {
+		if (titleLower && chunk.toLowerCase() === titleLower) continue;
+		if (chunk.length < 25 && !/[.!?]/.test(chunk)) continue;
+		return chunk;
+	}
+
+	return "";
+};
+
 const parseDateOnlyAsLocalDate = (value: string): Date => {
 	const m = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
 	if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
 	return new Date(value);
 };
 
-const posts = Object.entries(modules).map(([path, mod]) => {
+const posts = await Promise.all(Object.entries(modules).map(async ([path, mod]) => {
 	const fm = mod.frontmatter || {};
 	const pathEnd = path.split("/");
 	const id = fm.id || pathEnd[pathEnd.length - 1].replace(/\.(md|mdx)$/, "");
@@ -60,6 +141,7 @@ const posts = Object.entries(modules).map(([path, mod]) => {
 		id,
 		title: fm.title || id,
 		description: fm.description || "",
+		excerpt: await extractFirstSegment(mod, fm.title || id),
 		date: fm.date || "1970-01-01",
 		tags: fm.tags || [],
 		cover,
@@ -67,7 +149,7 @@ const posts = Object.entries(modules).map(([path, mod]) => {
 		videos,
 		pathname: `/post/${id}`,
 	};
-});
+}));
 
 function getFeaturedByTitle(title: string): Featured | null {
 	const t = String(title || "").trim();
@@ -153,10 +235,8 @@ const sortedPosts = posts.sort(
 	</section> -->
 
 	<section class="posts-section" id="posts">
-		<h2>Posts</h2>
-
 		<div class="filters">
-			<h3>Filter by Tags:</h3>
+			<h2>Filter by Tags:</h2>
 			<div class="tag-buttons">
 				<button
 					id="tag-all"
@@ -357,9 +437,9 @@ const sortedPosts = posts.sort(
 		margin-bottom: 0.5rem;
 	}
 
-	.filters h3 {
-		margin-bottom: 1rem;
-		font-size: 1rem;
+	.filters h2 {
+		margin-bottom: 0.4rem;
+		font-size: 1.1rem;
 	}
 
 	.tag-buttons {
@@ -377,6 +457,7 @@ const sortedPosts = posts.sort(
 		cursor: pointer;
 		transition: all 0.2s;
 		font-size: 0.9rem;
+		font-family: inherit;
 	}
 
 	.filter-tag:hover {

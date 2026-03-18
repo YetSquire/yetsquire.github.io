@@ -1,4 +1,5 @@
 let api = null;
+let apiRootEl = null;
 const hookedJumpLinks = new WeakSet();
 
 function easeInOutCubic(t) {
@@ -28,11 +29,17 @@ function smoothScrollToElement(el, durationMs = 650) {
 }
 
 function initPostsFilter() {
-	if (api) return api;
-
 	// DOM lookups MUST happen inside init
 	const postListEl = document.getElementById("posts-list");
-	if (!postListEl) return null;
+	if (!postListEl) {
+		api = null;
+		apiRootEl = null;
+		return null;
+	}
+
+	if (api && apiRootEl === postListEl) return api;
+	api = null;
+	apiRootEl = postListEl;
 	
 	const tagButtons = Array.from(document.querySelectorAll(".filter-tag"));
 	const allBtn = document.getElementById("tag-all");
@@ -130,14 +137,24 @@ function setSelectedTags(tags) {
 }
 
 function bootHomePosts() {
-	const postsList = document.getElementById("posts-list");
-	if (!postsList) {
-		requestAnimationFrame(bootHomePosts);
-		return;
-	}
-
 	const postsSection = document.getElementById("posts");
 	const postsApi = initPostsFilter();
+	if (!postsApi || !postsSection) return;
+
+	try {
+		const url = new URL(window.location.href);
+		const tagParams = url.searchParams.getAll("tag");
+		const tags = tagParams
+			.flatMap((t) => String(t || "").split(","))
+			.map((t) => t.trim())
+			.filter(Boolean);
+		if (tags.length) {
+			postsApi.setSelectedTags(tags);
+			smoothScrollToElement(postsSection, 650);
+		}
+	} catch {
+		// ignore
+	}
 
 	const jumpLinks = Array.from(document.querySelectorAll("a[data-post-tag]"));
 

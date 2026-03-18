@@ -12,16 +12,26 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 ---
 
 <article class="post-card" data-tags={dataTags} data-id={post.id}>
-	<h2><a href={post.pathname}>{post.title}</a></h2>
-	<p class="date">{parseDateOnlyAsLocalDate(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-	<p class="description">{post.description}</p>
-	{displayImage && <img src={displayImage} alt={post.title} />}
+	<header class="post-card__header">
+		<div class="post-card__heading">
+			<h2 class="post-card__title">
+				<a href={post.pathname}>{post.title}</a>
+			</h2>
+			<div class="tags">
+				{post.tags.map((tag: unknown) => (
+					<a class="tag" href={`/?tag=${encodeURIComponent(String(tag))}#posts`} data-post-tag={String(tag)}>
+						{tag}
+					</a>
+				))}
+			</div>
+		</div>
+		<time class="date" datetime={post.date}>
+			{parseDateOnlyAsLocalDate(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+		</time>
+	</header>
 
-	<div class="tags">
-		{post.tags.map((tag: unknown) => (
-			<span class="tag">{tag}</span>
-		))}
-	</div>
+	<p class="excerpt">{post.excerpt || post.description}</p>
+	{displayImage && <img src={displayImage} alt={post.title} />}
 </article>
 
 <style>
@@ -37,29 +47,52 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 	}
 
-	h2 {
-		margin-bottom: 0.5rem;
+	.post-card__header {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+		flex-wrap: wrap;
+		margin-bottom: 0.75rem;
+	}
+
+	.post-card__heading {
+		display: flex;
+		align-items: baseline;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+		min-width: 0;
+	}
+
+	.post-card__title {
+		margin: 0;
 		font-size: 1.5rem;
 	}
 
-	h2 a {
+	.post-card__title a {
 		text-decoration: none;
 		color: #0066cc;
 	}
 
-	h2 a:hover {
+	.post-card__title a:hover {
 		text-decoration: underline;
 	}
 
 	.date {
 		color: #666;
 		font-size: 0.9rem;
-		margin-bottom: 0.5rem;
+		margin-left: auto;
+		text-align: right;
+		white-space: nowrap;
 	}
 
-	.description {
+	.excerpt {
 		margin-bottom: 1rem;
 		color: #555;
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
 	}
 
 	img {
@@ -89,7 +122,8 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 		padding: 0.25rem 0.75rem;
 		border-radius: 20px;
 		font-size: 0.85rem;
-		cursor: pointer;
+		font-family: inherit;
+		text-decoration: none;
 		transition: background-color 0.2s;
 	}
 
