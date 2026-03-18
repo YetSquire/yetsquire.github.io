@@ -183,7 +183,7 @@ const sortedPosts = posts.sort(
 
 	<div class="hero">
 		<section class="introduction">
-			<div class="hero-image-swap" tabindex="0" role="img"></div>
+			<div class="hero-image" role="img"></div>
 
 			<div class="intro-text">
 				<p class="typed-subtitle">
@@ -367,7 +367,7 @@ const sortedPosts = posts.sort(
 		margin-top: 1rem;
 	}
 
-	.hero-image-swap {
+	.hero-image {
 		width: 400px;
 		height: 500px;
 		border-radius: 8px;
@@ -375,30 +375,6 @@ const sortedPosts = posts.sort(
 		background-size: cover;
 		background-position: center;
 		box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-		transition:
-			background-image 600ms ease,
-			transform 800ms ease,
-			box-shadow 800ms ease;
-		cursor: pointer;
-	}
-
-	.hero-image-swap:hover,
-	.hero-image-swap:focus-visible {
-		background-image: url("/images/test.png");
-		transform: translateY(-4px);
-		box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5);
-	}
-
-	@media (max-width: 780px) {
-		.introduction {
-			flex-direction: column;
-			gap: 2rem;
-		}
-
-		.hero-image-swap {
-			width: 220px;
-			height: 300px;
-		}
 	}
 
 	.feature-card {
