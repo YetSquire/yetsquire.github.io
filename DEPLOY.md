@@ -19,9 +19,13 @@ Note: `npm run build` runs `src/scripts/sync_public_images.js` first, which copi
 
 `@astrojs/cloudflare` enables Astro sessions via a Cloudflare KV binding named `SESSION` by default.
 
-In Cloudflare Pages → Settings → Functions → KV namespace bindings, create/bind a KV namespace as:
+Cloudflare Pages bindings are configured **in the Cloudflare dashboard** (not in this repo).
+
+In Cloudflare Dashboard → Workers & Pages → your Pages project → Settings → Functions → **KV namespace bindings**, create/bind a KV namespace as:
 
 - Variable name: `SESSION`
+
+Tip: Set this for both **Production** and **Preview** environments if you use Preview deployments.
 
 ## 2) GitHub Actions secret (Google service account)
 
@@ -33,7 +37,9 @@ Share any source Google Doc(s) with the service account’s `client_email` so it
 
 ## 3) Cloudflare Pages env vars (compile endpoint)
 
-Set these as **Cloudflare Pages environment variables**:
+Set these as **Cloudflare Pages environment variables** (Dashboard → Workers & Pages → your Pages project → Settings → Environment variables).
+
+These are read by `src/pages/api/compile.ts` and `src/lib/cloudflare_access.ts`.
 
 - `CF_ACCESS_TEAM_DOMAIN`: e.g. `andypersonalwebsite.cloudflareaccess.com`
 - `CF_ACCESS_AUD`: your Access Application “AUD” (Audience)
@@ -41,7 +47,7 @@ Set these as **Cloudflare Pages environment variables**:
 
 - `GITHUB_OWNER`: e.g. `YetSquire`
 - `GITHUB_REPO`: e.g. `yetsquire.github.io`
-- `GITHUB_DISPATCH_TOKEN`: a GitHub token that can dispatch workflows for the repo
+- `GITHUB_DISPATCH_TOKEN`: a GitHub token that can dispatch workflows for the repo (**store as a secret**)
 - `GITHUB_WORKFLOW_ID`: `compile-post.yml` (optional; default)
 - `GITHUB_REF`: `main` (optional; default)
 
@@ -49,9 +55,13 @@ Set these as **Cloudflare Pages environment variables**:
 
 In Cloudflare Zero Trust → Access → Applications:
 
-- Create (or reuse) an app protecting your Pages site.
+- Create (or reuse) an app protecting your Pages site (typically a **Self-hosted** application for `https://YOUR_DOMAIN`).
 - Add a policy that allows only your identity (email / IdP user).
 - Ensure the policy applies to the path `/api/compile*`.
+
+Notes:
+- Your Access app’s **AUD** value is what you put in `CF_ACCESS_AUD`.
+- When Access is enforced, Cloudflare injects a `Cf-Access-Jwt-Assertion` header, and the `/api/compile` endpoint validates it.
 
 ## 5) Triggering a compile
 
