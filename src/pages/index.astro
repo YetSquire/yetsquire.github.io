@@ -191,9 +191,8 @@ const sortedPosts = posts.sort(
 					<span class="cursor">|</span>
 				</p>
 				<p>
-					My name is Andy, XR developer, history nerd, and aspiring
-					human.
-					<br /><br />
+					My name is Andy, an XR dev and history nerd
+					<br/><br/>
 					I like building <a
 						class="special-link"
 						style={`--special-link-color: ${TEXT_COLORS.Project};`}
@@ -205,7 +204,7 @@ const sortedPosts = posts.sort(
 						href="/"
 						data-post-tag="Thought">world</a
 					>.
-					<br /><br />
+					<br /><br/>
 					You can scroll down, or learn <a
 						class="special-link"
 						style={`--special-link-color: ${TEXT_COLORS.About};`}
@@ -312,6 +311,8 @@ const sortedPosts = posts.sort(
 		line-height: 1.6;
 		text-align: left;
 		justify-content: center;
+		white-space: nowrap;
+		overflow-x: auto;
 	}
 
 	.typed-subtitle {
