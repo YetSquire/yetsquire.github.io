@@ -1,5 +1,5 @@
 Shrink the width of pages
-FIGURE OUT DEPLOYMENT
+FIGURE OUT DEPLOYMENT for compiler
 
 Gaussian splat.. Myself?
 Colors on posts align with general schema- About > Project > Thought
