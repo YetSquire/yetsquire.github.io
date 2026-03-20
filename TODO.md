@@ -9,3 +9,7 @@ Put in thoughts
 
 
 Clean up code
+Mobile deployment, mac deployment
+- Arrow weird background on mobile
+- image doesn't render on mobile
+- tags and date on mobile look weird
