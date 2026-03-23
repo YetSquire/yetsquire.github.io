@@ -228,7 +228,7 @@ function bootHomePosts() {
 			const savedScroll = Number(getCookie(HOME_SCROLL_COOKIE) || 0);
 			if (Number.isFinite(savedScroll) && savedScroll > 0) {
 				requestAnimationFrame(() => {
-					setTimeout(() => window.scrollTo(0, savedScroll), 0);
+					setTimeout(() => smoothScrollToY(savedScroll), 0);
 				});
 			}
 		}
