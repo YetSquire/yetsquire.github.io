@@ -171,7 +171,7 @@ const featuredPosts = featuredLinks
 	.map((item) => posts.find((post) => post.pathname === item.pathname))
 	.filter(Boolean);
 
-const allTags = [...new Set(posts.flatMap((post) => post.tags))].sort();
+const allTags = [...new Set(posts.flatMap((post) => post.tags))].sort(); // comically inefficient, not too bad
 const sortedPosts = posts.sort(
 	(a, b) =>
 		parseDateOnlyAsLocalDate(b.date).getTime() -
