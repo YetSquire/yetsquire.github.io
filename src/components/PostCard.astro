@@ -1,8 +1,11 @@
 ---
 import { TEXT_COLORS } from "../config/site"; 
 
-const { post } = Astro.props;
+const { post, instanceKey } = Astro.props;
 const displayImage = post.cover;
+const snippetImage =
+	(Array.isArray(post.images) && post.images[0]) ? post.images[0] : displayImage;
+const uniqueId = instanceKey ? String(instanceKey) : String(post.id);
 
 const dataTags = (post.tags || []).join(',');
 
@@ -22,8 +25,18 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 ---
 
 <article class="post-card" data-tags={dataTags} data-id={post.id}>
+	<input
+		class="snippet-toggle"
+		type="checkbox"
+		id={`snippet-${uniqueId}`}
+		aria-label="Toggle snippet"
+		aria-controls={`snippet-panel-${uniqueId}`}
+	/>
 	<header class="post-card__header">
 		<div class="post-card__heading">
+			<label class="snippet-toggle-button" for={`snippet-${uniqueId}`}>
+				<span class="snippet-toggle-icon">▾</span>
+			</label>
 			<h2 class="post-card__title"
 				style={`color: ${color};`}
 			>
@@ -42,7 +55,12 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 		</time>
 	</header>
 
-	<p class="excerpt">{post.excerpt || post.description}</p>
+	<div class="post-card__snippet" id={`snippet-panel-${uniqueId}`}>
+		{snippetImage && (
+			<img class="snippet-image" src={snippetImage} alt={post.title} />
+		)}
+		<p class="excerpt">{post.excerpt || post.description}</p>
+	</div>
 	{displayImage && <img src={displayImage} alt={post.title} />}
 </article>
 
@@ -76,6 +94,40 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 		min-width: 0;
 	}
 
+	.snippet-toggle {
+		position: absolute;
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.snippet-toggle-button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		border-radius: 6px;
+		border: 1px solid #ddd;
+		color: #333;
+		background-color: #fff;
+		cursor: pointer;
+		transition: background-color 0.2s, border-color 0.2s;
+	}
+
+	.snippet-toggle-button:hover {
+		border-color: #0066cc;
+		color: #0066cc;
+	}
+
+	.snippet-toggle-icon {
+		display: inline-block;
+		transition: transform 0.2s;
+	}
+
+	.snippet-toggle:checked ~ .post-card__header .snippet-toggle-icon {
+		transform: rotate(180deg);
+	}
+
 	.post-card__title {
 		margin: 0;
 		font-size: 1.5rem;
@@ -100,8 +152,28 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 		white-space: nowrap;
 	}
 
-	.excerpt {
+	.post-card__snippet {
+		display: none;
+		align-items: flex-start;
+		gap: 1rem;
 		margin-bottom: 1rem;
+	}
+
+	.snippet-toggle:checked ~ .post-card__snippet {
+		display: flex;
+	}
+
+	.snippet-image {
+		height: 200px;
+		width: auto;
+		max-width: 300px;
+		object-fit: cover;
+		border-radius: 4px;
+		flex: 0 0 auto;
+	}
+
+	.excerpt {
+		margin: 0;
 		color: #555;
 		display: -webkit-box;
 		-webkit-line-clamp: 3;

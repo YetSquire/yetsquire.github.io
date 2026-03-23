@@ -220,7 +220,7 @@ const sortedPosts = posts.sort(
 		<h2>Featured</h2>
 		<div class="posts-list">
 			{featuredPosts.map((post) => (
-				<PostCard post={post} />
+				<PostCard post={post} instanceKey={`featured-${post.id}`} />
 			))}
 		</div>
 	</section>
@@ -257,7 +257,9 @@ const sortedPosts = posts.sort(
 		<div class="posts-list" id="posts-list">
 			{
 				sortedPosts.length > 0 ? (
-					sortedPosts.map((post) => <PostCard post={post} />)
+					sortedPosts.map((post) => (
+						<PostCard post={post} instanceKey={`list-${post.id}`} />
+					))
 				) : (
 					<p class="no-posts">No posts found with the selected tags.</p>
 				)
