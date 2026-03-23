@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "node src/scripts/sync_public_images.js && concurrently -k -n COMPILER,ASTRO \"node compiler/server.js\" \"astro dev\"",
+    "dev": "node src/scripts/sync_public_images.js && concurrently -k -n COMPILER,ASTRO \"node -e \\\"const path=require('path'); process.chdir(path.resolve('compiler')); require(path.resolve('server.js'))\\\"\" \"astro dev\"",
     "build": "node src/scripts/sync_public_images.js && astro build",
     "preview": "astro preview",
     "astro": "astro",

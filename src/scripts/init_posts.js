@@ -216,6 +216,7 @@ function bootHomePosts() {
 		const saveScroll = () => {
 			if (scrollTimer) clearTimeout(scrollTimer);
 			scrollTimer = setTimeout(() => {
+				if (!isHomePage()) return;
 				setCookie(HOME_SCROLL_COOKIE, String(window.scrollY || 0), HOME_COOKIE_MAX_AGE_S);
 			}, 250);
 		};
