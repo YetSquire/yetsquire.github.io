@@ -1,6 +1,37 @@
 let api = null;
 let apiRootEl = null;
 const hookedJumpLinks = new WeakSet();
+const HOME_TAGS_COOKIE = "home_tags";
+const HOME_SCROLL_COOKIE = "home_scroll";
+const HOME_COOKIE_MAX_AGE_S = 60 * 60 * 24 * 14; // 14 days
+
+function isHomePage() {
+	return window.location.pathname === "/" || window.location.pathname === "";
+}
+
+function getCookie(name) {
+	const needle = `${name}=`;
+	const parts = String(document.cookie || "").split(";");
+	for (const part of parts) {
+		const trimmed = part.trim();
+		if (trimmed.startsWith(needle)) {
+			return decodeURIComponent(trimmed.slice(needle.length));
+		}
+	}
+	return "";
+}
+
+function setCookie(name, value, maxAgeSeconds) {
+	const maxAge = Number.isFinite(maxAgeSeconds) ? `; Max-Age=${maxAgeSeconds}` : "";
+	document.cookie = `${name}=${encodeURIComponent(String(value || ""))}; Path=/${maxAge}; SameSite=Lax`;
+}
+
+function parseTagCookie(value) {
+	return String(value || "")
+		.split(",")
+		.map((t) => t.trim())
+		.filter(Boolean);
+}
 
 function easeInOutCubic(t) {
 	return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -93,6 +124,10 @@ function initPostsFilter() {
 		for (const tag of Array.isArray(nextTags) ? nextTags : []) {
 			if (tag) currentSelectedTags.add(tag);
 		}
+		if (isHomePage()) {
+			const tagsValue = Array.from(currentSelectedTags).join(",");
+			setCookie(HOME_TAGS_COOKIE, tagsValue, HOME_COOKIE_MAX_AGE_S);
+		}
 		updateButtonStates();
 		renderPosts();
 	}
@@ -141,6 +176,7 @@ function bootHomePosts() {
 	const postsApi = initPostsFilter();
 	if (!postsApi || !postsSection) return;
 
+	const isHome = isHomePage();
 	try {
 		const url = new URL(window.location.href);
 		const tagParams = url.searchParams.getAll("tag");
@@ -151,6 +187,9 @@ function bootHomePosts() {
 		if (tags.length) {
 			postsApi.setSelectedTags(tags);
 			smoothScrollToElement(postsSection, 650);
+		} else if (isHome) {
+			const savedTags = parseTagCookie(getCookie(HOME_TAGS_COOKIE));
+			if (savedTags.length) postsApi.setSelectedTags(savedTags);
 		}
 	} catch {
 		// ignore
@@ -171,6 +210,29 @@ function bootHomePosts() {
 			smoothScrollToElement(postsSection, 850);
 		});
 	});
+
+	if (isHome) {
+		let scrollTimer = null;
+		const saveScroll = () => {
+			if (scrollTimer) clearTimeout(scrollTimer);
+			scrollTimer = setTimeout(() => {
+				setCookie(HOME_SCROLL_COOKIE, String(window.scrollY || 0), HOME_COOKIE_MAX_AGE_S);
+			}, 250);
+		};
+		window.addEventListener("scroll", saveScroll, { passive: true });
+
+		const shouldRestore =
+			!window.location.hash &&
+			!new URL(window.location.href).searchParams.getAll("tag").length;
+		if (shouldRestore) {
+			const savedScroll = Number(getCookie(HOME_SCROLL_COOKIE) || 0);
+			if (Number.isFinite(savedScroll) && savedScroll > 0) {
+				requestAnimationFrame(() => {
+					setTimeout(() => window.scrollTo(0, savedScroll), 0);
+				});
+			}
+		}
+	}
 }
 
 if (typeof document !== "undefined") {
