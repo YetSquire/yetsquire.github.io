@@ -110,11 +110,6 @@ const { title } = Astro.props;
                 color: rgb(0, 0, 0);
             }
 
-            .home-overlay-link.is-disabled {
-                opacity: 0.5;
-                pointer-events: none;
-            }
-
             .arrow {
                 display: inline-block;
                 transition: transform 0.3s;
@@ -145,10 +140,10 @@ const { title } = Astro.props;
     <body>
         <div class="home-overlay">
             <a
-                id="back-link"
+                id="home-link"
                 class="home-overlay-link"
                 href="/"
-                aria-label="Back"
+                aria-label="Home"
             >
                 <span class="arrow">←</span>
             </a>
@@ -160,73 +155,5 @@ const { title } = Astro.props;
             <p>&copy; Imitation is the sincerest form of flattery. Copy as you see fit. </p>
         </footer>
 
-        <script is:inline>
-            (() => {
-                if (typeof window === "undefined") return;
-
-                const STACK_KEY = "blog:lastPages";
-                const MAX_STACK = 50;
-
-                const getCurrentUrl = () =>
-                    `${window.location.pathname}${window.location.search}${window.location.hash}`;
-
-                const readStack = () => {
-                    try {
-                        const raw = window.sessionStorage.getItem(STACK_KEY);
-                        const parsed = raw ? JSON.parse(raw) : [];
-                        return Array.isArray(parsed)
-                            ? parsed.filter((v) => typeof v === "string")
-                            : [];
-                    } catch {
-                        return [];
-                    }
-                };
-
-                const writeStack = (stack) => {
-                    try {
-                        window.sessionStorage.setItem(
-                            STACK_KEY,
-                            JSON.stringify(stack.slice(-MAX_STACK)),
-                        );
-                    } catch {
-                        // ignore
-                    }
-                };
-
-                const updateBackLink = () => {
-                    const link = document.getElementById("back-link");
-                    if (!link) return;
-
-                    const current = getCurrentUrl();
-                    const stack = readStack();
-                    if (stack[stack.length - 1] !== current) stack.push(current);
-                    writeStack(stack);
-
-                    const backTarget = stack.length >= 2 ? stack[stack.length - 2] : "/";
-                    link.href = backTarget;
-                    link.classList.toggle("is-disabled", stack.length < 2);
-
-                    if (link.dataset.backInit === "1") return;
-                    link.dataset.backInit = "1";
-
-                    link.addEventListener("click", (e) => {
-                        const target = link.getAttribute("href") || "/";
-                        if (!target || target === current) return;
-
-                        e.preventDefault();
-                        const nextStack = readStack();
-                        if (nextStack[nextStack.length - 1] === current) {
-                            nextStack.pop();
-                            writeStack(nextStack);
-                        }
-                        window.location.assign(target);
-                    });
-                };
-
-                document.addEventListener("astro:page-load", updateBackLink);
-                document.addEventListener("DOMContentLoaded", updateBackLink);
-                updateBackLink();
-            })();
-        </script>
     </body>
 </html>
