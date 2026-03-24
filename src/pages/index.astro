@@ -192,43 +192,52 @@ const sortedPosts = posts.sort(
 					<span class="cursor">|</span>
 				</p>
 				<p>
-					My name is Andy, an XR dev and history nerd
-					<br/><br/>
-					I like building <a
-						class="special-link"
-						style={`--special-link-color: ${TEXT_COLORS.Project};`}
-						href="/"
-						data-post-tag="Project">systems</a
-					> and thinking about the <a
-						class="special-link"
-						style={`--special-link-color: ${TEXT_COLORS.Blog};`}
-						href="/"
-						data-post-tag="Thought">world</a
-					>.
-					<br /><br/>
-					You can scroll down, or learn <a
+					My name is <a
 						class="special-link"
 						style={`--special-link-color: ${TEXT_COLORS.About};`}
 						href="/"
-						data-post-tag="About">about</a
-					> me.
+						data-post-tag="About">Andy</a
+					>, an XR dev and history nerd
+
+					<br/><br/>
+					Here are my <a
+						class="special-link"
+						style={`--special-link-color: ${TEXT_COLORS.Project};`}
+						href="/"
+						data-post-tag="Project">projects</a
+					>, here are my <a
+						class="special-link"
+						style={`--special-link-color: ${TEXT_COLORS.Blog};`}
+						href="/"
+						data-post-tag="Thought">thoughts</a
+					>.
 				</p>
 			</div>
 		</section>
 	</div>
 
-	<section class="featured">
+	<!-- <section class="featured">
 		<h2>Featured</h2>
 		<div class="posts-list">
 			{featuredPosts.map((post) => (
-				<PostCard post={post} instanceKey={`featured-${post.id}`} />
+				<PostCard
+					post={post}
+					instanceKey={`featured-${post.id}`}
+					defaultExpanded={true}
+					isFeatured={true}
+				/>
 			))}
 		</div>
-	</section>
+	</section> -->
 
 	<section class="posts-section" id="posts">
 		<div class="filters">
-			<h2>Filter by Tags:</h2>
+			<div class="filters-header">
+				<h2>Filter by Tags:</h2>
+				<button class="expand-toggle" id="expand-toggle" type="button">
+					Expand All
+				</button>
+			</div>
 			<div class="tag-buttons">
 				<button
 					id="tag-all"
@@ -273,10 +282,9 @@ const sortedPosts = posts.sort(
 		.hero {
 			display: flex;
 			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			min-height: 100vh;
-			padding: clamp(2rem, 6vh, 4rem) 0 clamp(4rem, 16vh, 10rem) 0;
+			align-items: flex-start;
+			justify-content: flex-start;
+			padding: clamp(2rem, 6vh, 4rem) 0 clamp(2rem, 8vh, 5rem) 0;
 			gap: 2.5rem;
 		}
 
@@ -348,8 +356,8 @@ const sortedPosts = posts.sort(
 	}
 
 	.hero-image {
-		width: 400px;
-		height: 500px;
+		width: 250px;
+		height: 250px;
 		border-radius: 8px;
 		background-image: url("/images/babel.jpg");
 		background-size: cover;
@@ -361,15 +369,45 @@ const sortedPosts = posts.sort(
 		margin-top: 3rem;
 	}
 
+	.posts-list {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
 	.filters {
 		padding: 0.5rem;
 		border-radius: 4px;
 		margin-bottom: 0.5rem;
 	}
 
+	.filters-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 0.4rem;
+	}
+
 	.filters h2 {
 		margin-bottom: 0.4rem;
 		font-size: 1.1rem;
+	}
+
+	.expand-toggle {
+		padding: 0.45rem 0.9rem;
+		border: 2px solid #ddd;
+		background: #ffffff;
+		border-radius: 20px;
+		cursor: pointer;
+		font-size: 0.9rem;
+		font-family: inherit;
+		transition: all 0.2s;
+	}
+
+	.expand-toggle:hover {
+		border-color: #0066cc;
+		color: #0066cc;
 	}
 
 	.tag-buttons {

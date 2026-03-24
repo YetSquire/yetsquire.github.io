@@ -1102,6 +1102,8 @@ app.post("/compile", async (req, res) => {
     }
 
     body = scrubDocExportMetaHtml(body);
+    body = stripMetaHeaderFromExportHtml(body);
+    body = stripMetaHeaderLines(body);
 
     const frontmatter = [
       "---",

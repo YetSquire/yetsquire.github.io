@@ -69,8 +69,8 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 		border: 1px solid #ddd;
 		border-radius: 8px;
 		padding: 1.5rem;
-		margin-bottom: 2rem;
 		transition: box-shadow 0.2s;
+		cursor: pointer;
 	}
 
 	.post-card:hover {
@@ -83,7 +83,6 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 		justify-content: space-between;
 		gap: 1rem;
 		flex-wrap: wrap;
-		margin-bottom: 0.75rem;
 	}
 
 	.post-card__heading {
@@ -157,7 +156,7 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 		display: none;
 		align-items: flex-start;
 		gap: 1rem;
-		margin-bottom: 1rem;
+		margin-top: 1rem;
 	}
 
 	.snippet-toggle:checked ~ .post-card__snippet {
@@ -174,7 +173,7 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 	}
 
 	.excerpt {
-		margin: 0;
+		margin-left: 2rem;
 		color: #555;
 		display: -webkit-box;
 		-webkit-line-clamp: 3;
@@ -186,7 +185,7 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 		max-width: 100%;
 		height: auto;
 		border-radius: 4px;
-		margin-bottom: 1rem;
+		margin-bottom: 0.75rem;
 	}
 
 	.tags {

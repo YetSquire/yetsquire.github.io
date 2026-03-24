@@ -1,6 +1,7 @@
 let api = null;
 let apiRootEl = null;
 const hookedJumpLinks = new WeakSet();
+let cardClickBound = false;
 const HOME_TAGS_COOKIE = "home_tags";
 const HOME_SCROLL_COOKIE = "home_scroll";
 const HOME_COOKIE_MAX_AGE_S = 60 * 60 * 24 * 14; // 14 days
@@ -75,6 +76,8 @@ function initPostsFilter() {
 	const tagButtons = Array.from(document.querySelectorAll(".filter-tag"));
 	const allBtn = document.getElementById("tag-all");
 	const postsCountEl = document.querySelector(".posts-count p");
+	const expandToggleBtn = document.getElementById("expand-toggle");
+	let expandAllState = null; // null = untouched, true = expanded, false = collapsed
 
 	const currentSelectedTags = new Set();
 
@@ -117,6 +120,24 @@ function initPostsFilter() {
 			postsCountEl.textContent = `Showing ${visibleCount} post${visibleCount !== 1 ? "s" : ""
 				}`;
 		}
+
+		applyExpandState();
+	}
+
+	function updateExpandToggleLabel() {
+		if (!expandToggleBtn) return;
+		expandToggleBtn.textContent = expandAllState ? "Collapse All" : "Expand All";
+	}
+
+	function applyExpandState() {
+		if (expandAllState === null) return;
+		const cards = getPostCards();
+		cards.forEach((card) => {
+			if (card.dataset.featured === "1") return;
+			if (card.style.display === "none") return;
+			const checkbox = card.querySelector(".snippet-toggle");
+			if (checkbox) checkbox.checked = expandAllState;
+		});
 	}
 
 	function setSelectedTags(nextTags) {
@@ -138,6 +159,15 @@ function initPostsFilter() {
 			e.preventDefault();
 			setSelectedTags([]);
 		});
+	}
+
+	if (expandToggleBtn) {
+		expandToggleBtn.addEventListener("click", () => {
+			expandAllState = expandAllState === true ? false : true;
+			updateExpandToggleLabel();
+			applyExpandState();
+		});
+		updateExpandToggleLabel();
 	}
 
 	tagButtons.forEach((btn) => {
@@ -210,6 +240,20 @@ function bootHomePosts() {
 			smoothScrollToElement(postsSection, 850);
 		});
 	});
+
+	if (!cardClickBound) {
+		cardClickBound = true;
+		document.addEventListener("click", (event) => {
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+			if (target.closest("a, button, input, textarea, select, label")) return;
+			const card = target.closest(".post-card");
+			if (!card) return;
+			const checkbox = card.querySelector(".snippet-toggle");
+			if (!checkbox) return;
+			checkbox.checked = !checkbox.checked;
+		});
+	}
 
 	if (isHome) {
 		let scrollTimer = null;

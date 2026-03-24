@@ -3,5 +3,5 @@ export const TEXT_COLORS = {
     About: "#2f97feff",
     // Post: "#b3ff00ff",
     Blog: "#19b701ff",
-    Project: "rgb(207, 75, 35)",
+    Project: "rgb(204, 90, 55)",
 };
