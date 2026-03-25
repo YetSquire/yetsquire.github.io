@@ -60,3 +60,14 @@ const videos = Array.isArray(fm.videos) ? fm.videos : (fm.videos ? [fm.videos] :
         </section>
     </article>
 </Layout>
+
+<style>
+	.post-full {
+		opacity: 0;
+		transition: opacity 280ms ease;
+	}
+
+	html:not(.post-loading) .post-full {
+		opacity: 1;
+	}
+</style>

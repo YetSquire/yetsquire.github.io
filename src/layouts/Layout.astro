@@ -17,6 +17,9 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
 	        <meta name="viewport" content="width=device-width" />
 	        <link rel="preconnect" href="https://fonts.googleapis.com" />
 	        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+            <link rel="preload" href="https://fonts.gstatic.com/s/merriweather/v30/u-440qyriQwlOrhSvowK_l521wRpX-BI.woff2" as="font" type="font/woff2" crossorigin>
+
 	        <link
 	            href="https://fonts.googleapis.com/css2?family=Antic&display=swap"
 	            rel="stylesheet"
@@ -66,13 +69,11 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
                 color: #666666;
                 font-size: 0.9rem;
                 border-top: 1px solid #e5e7eb;
-                font-family: "Antic", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-                            "Helvetica Neue", Arial, sans-serif !important;
+                font-family: "Antic" !important;
             }
 
             footer p {
-                font-family: "Antic", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-                            "Helvetica Neue", Arial, sans-serif !important;
+                font-family: "Antic" !important;
             }
 
             a {
