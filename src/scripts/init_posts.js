@@ -23,8 +23,8 @@ function getCookie(name) {
 }
 
 function setCookie(name, value, maxAgeSeconds) {
-	const maxAge = Number.isFinite(maxAgeSeconds) ? `; Max-Age=${maxAgeSeconds}` : "";
-	document.cookie = `${name}=${encodeURIComponent(String(value || ""))}; Path=/${maxAge}; SameSite=Lax`;
+	const secure = location.protocol === "https:" ? "; Secure" : "";    
+	document.cookie = `${name}=${value}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
 }
 
 function parseTagCookie(value) {

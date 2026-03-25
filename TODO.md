@@ -2,6 +2,7 @@ Put in projects
 Put in thoughts
 
 
+Featured tag
 
 RSS feed?
 Mailing list?
