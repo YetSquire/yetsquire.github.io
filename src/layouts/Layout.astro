@@ -1,4 +1,4 @@
----
+﻿---
 import { ClientRouter } from "astro:transitions";
 
 interface Props {
@@ -6,6 +6,8 @@ interface Props {
 }
 
 const { title } = Astro.props;
+
+const isPostsPage = Astro.url.pathname.startsWith('/post/');
 ---
 
 <html lang="en">
@@ -55,9 +57,6 @@ const { title } = Astro.props;
                 margin: 0 auto;
                 padding: 2rem 1rem;
             }
-            
-
-
 
             footer {
                 margin-top: 4rem;
@@ -98,11 +97,11 @@ const { title } = Astro.props;
                 align-items: center;
                 color: rgb(0, 0, 0);
                 text-decoration: none;
-                font-weight: 600;
-                font-size: 3rem;
                 line-height: 1;
+                font-size: 1.5rem;
                 -webkit-backdrop-filter: blur(8px);
                 backdrop-filter: blur(8px);
+                transition: transform 0.3s;
             }
 
             .home-overlay-link:hover {
@@ -111,10 +110,11 @@ const { title } = Astro.props;
 
             .arrow {
                 display: inline-block;
-                transition: transform 0.3s;
+                font-weight: 600;
+                font-size: 3rem;
             }
 
-            .home-overlay-link:hover .arrow {
+            .home-overlay-link:hover {
                 transform: translateX(-4px);
             }
 
@@ -137,16 +137,18 @@ const { title } = Astro.props;
         </style>
     </head>
     <body>
-        <div class="home-overlay">
-            <a
-                id="home-link"
-                class="home-overlay-link"
-                href="/"
-                aria-label="Home"
-            >
-                <span class="arrow">←</span>
-            </a>
-        </div>
+        {isPostsPage && (
+            <div class="home-overlay">
+                <a
+                    id="home-link"
+                    class="home-overlay-link"
+                    href="/"
+                    aria-label="Home"
+                >
+                    <span class="arrow">←</span>posts
+                </a>
+            </div>
+        )}
         <main>
             <slot />
         </main>
