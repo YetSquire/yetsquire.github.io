@@ -148,31 +148,53 @@ const posts = await Promise.all(Object.entries(modules).map(async ([path, mod]) 
 	};
 }));
 
-function getFeaturedByTitle(title: string): Featured | null {
-	const t = String(title || "").trim();
-	if (!t) return null;
+const manualPosts = [
+	{
+		id: "about-me",
+		title: "About Me",
+		description: "A quick overview of who I am and how to reach me.",
+		excerpt: "A quick overview of who I am and how to reach me.",
+		date: "2026-01-01",
+		tags: ["About"],
+		cover: "",
+		images: [],
+		videos: [],
+		pathname: "/post/about-me",
+	},
+];
 
-	const match = posts.find((p) => p.title === t);
-	if (match) return { title: match.title, pathname: match.pathname };
+// function getFeaturedByTitle(title: string): Featured | null {
+// 	const t = String(title || "").trim();
+// 	if (!t) return null;
 
-	const slug = slugify(t, { lower: true, strict: true, trim: true });
-	if (!slug) return null;
-	return { title: t, pathname: `/post/${slug}` };
-}
+// 	const match = posts.find((p) => p.title === t);
+// 	if (match) return { title: match.title, pathname: match.pathname };
 
-// Hardcode these by post title (exact match preferred).
-const FEATURED_A_TITLE = "About This Website";
+// 	const slug = slugify(t, { lower: true, strict: true, trim: true });
+// 	if (!slug) return null;
+// 	return { title: t, pathname: `/post/${slug}` };
+// }
 
-const featuredA = getFeaturedByTitle(FEATURED_A_TITLE);
-const featuredLinks = [featuredA].filter(
-	(item): item is Featured => Boolean(item),
-);
-const featuredPosts = featuredLinks
-	.map((item) => posts.find((post) => post.pathname === item.pathname))
-	.filter(Boolean);
+// // Hardcode these by post title (exact match preferred).
+// const FEATURED_A_TITLE = "About This Website";
 
-const allTags = [...new Set(posts.flatMap((post) => post.tags))].sort(); // comically inefficient, not too bad
-const sortedPosts = posts.sort(
+// const featuredA = getFeaturedByTitle(FEATURED_A_TITLE);
+// const featuredLinks = [featuredA].filter(
+// 	(item): item is Featured => Boolean(item),
+// );
+// const featuredPosts = featuredLinks
+// 	.map((item) => posts.find((post) => post.pathname === item.pathname))
+// 	.filter(Boolean);
+
+const allPosts = [
+	...manualPosts.filter(
+		(manual) => !posts.some((p) => p.id === manual.id || p.pathname === manual.pathname),
+	),
+	...posts,
+];
+
+const allTags = [...new Set(allPosts.flatMap((post) => post.tags))].sort(); // comically inefficient, not too bad
+const sortedPosts = allPosts.sort(
 	(a, b) =>
 		parseDateOnlyAsLocalDate(b.date).getTime() -
 		parseDateOnlyAsLocalDate(a.date).getTime(),
