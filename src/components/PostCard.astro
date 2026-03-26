@@ -56,12 +56,11 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 	</header>
 
 	<div class="post-card__snippet" id={`snippet-panel-${uniqueId}`}>
-		{snippetImage && (
+		<!-- {snippetImage && (
 			<img class="snippet-image" src={snippetImage} alt={post.title} />
-		)}
+		)} -->
 		<p class="excerpt">{post.excerpt || post.description}</p>
 	</div>
-	{displayImage && <img src={displayImage} alt={post.title} />}
 </article>
 
 <style>
@@ -79,20 +78,20 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 	}
 
 	.post-card__header {
-		display: grid;
-		grid-template-columns: auto minmax(0, 1fr);
-		column-gap: 0.75rem;
-		row-gap: 0.35rem;
-		align-items: start;
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-wrap: wrap;
 	}
 
 	.post-card__grid {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		grid-template-rows: auto;
-		column-gap: 1rem;
-		row-gap: 0.35rem;
+		display: flex;
 		align-items: baseline;
+		gap: 1rem;
+		flex-wrap: wrap;
+		min-width: 0;
+		flex: 1 1 auto;
 	}
 
 	.snippet-toggle {
@@ -137,8 +136,6 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 		overflow: hidden;
 		text-overflow: ellipsis;
 		min-width: 0;
-		grid-column: 1;
-		grid-row: 1;
 	}
 
 	.post-card__title a {
@@ -151,13 +148,13 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 	}
 
 	.date {
-		position: static;
+		position: relative;
+		top: -5px; /* sad :( */
 		color: #666;
 		font-size: 0.9em;
 		text-align: right;
 		white-space: nowrap;
-		grid-column: 2;
-		grid-row: 1;
+		margin-left: auto;
 	}
 
 	.post-card__snippet {
@@ -203,11 +200,14 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 		align-self: baseline;
 		grid-column: 1;
 		grid-row: 1;
+		position: relative;
+		top: -3px;
 	}
 
 	.snippet-toggle-button {
+		position: static;
 		align-self: center;
-		grid-row: 1;
+		flex: 0 0 auto;
 	}
 
 	@media (max-width: 768px) {
@@ -222,7 +222,7 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 
 		.post-card__title {
 			font-size: 1em;
-			grid-column: 1;
+			grid-column: 1 / -1;
 			grid-row: 1;
 		}
 
@@ -232,6 +232,7 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 		}
 
 		.date {
+			margin-left: 0;
 			grid-column: 2;
 			grid-row: 1;
 		}
