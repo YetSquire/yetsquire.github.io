@@ -86,11 +86,9 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
                 color: #1557b0;
             }
 
-            .home-overlay {
-                position: fixed;
-                top: 4px;
-                left: 20px;
-                z-index: 1000;
+            .posts-header {
+                position: static;
+                padding: 0.5rem 1rem;
             }
 
             .home-overlay-link {
@@ -139,7 +137,7 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
     </head>
     <body>
         {isPostsPage && (
-            <div class="home-overlay">
+            <header class="posts-header">
                 <a
                     id="home-link"
                     class="home-overlay-link"
@@ -148,7 +146,7 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
                 >
                     <span class="arrow">←</span>posts
                 </a>
-            </div>
+            </header>
         )}
         <main>
             <slot />

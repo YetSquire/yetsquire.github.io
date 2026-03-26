@@ -9,7 +9,7 @@ Mailing list?
 
 Expand, collapse cached with cookies?
 Dark mode!
-Blog renders immediately without text for some reason
+Blog renders immediately without text for some reason <- FAUC
 
 Clean up code
 Mobile deployment, mac deployment
