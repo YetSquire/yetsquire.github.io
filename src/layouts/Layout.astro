@@ -93,7 +93,7 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
 
             .home-overlay-link {
                 display: inline-flex;
-                align-items: center;
+                align-items: baseline;
                 color: rgb(0, 0, 0);
                 text-decoration: none;
                 line-height: 1;
@@ -111,8 +111,9 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
             .arrow {
                 display: inline-block;
                 font-weight: 600;
-                font-size: 1.8rem;
+                font-size: 1.35em;
                 line-height: 1;
+                vertical-align: baseline;
             }
 
             .home-overlay-link:hover {
@@ -146,7 +147,7 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
                     href="/"
                     aria-label="Home"
                 >
-                    <span class="arrow">←</span>posts
+                    <span class="arrow">←posts</span>
                 </a>
             </header>
         )}

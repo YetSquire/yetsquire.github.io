@@ -118,7 +118,7 @@ import { TEXT_COLORS } from "../../config/site";
 
 <style>
 	.about-content {
-		max-width: 800px;
+		width: 100%;
 		margin-top: 2rem;
 	}
 
@@ -272,8 +272,11 @@ import { TEXT_COLORS } from "../../config/site";
 
 	@media (max-width: 480px) {
 		.social-buttons {
-			flex-direction: column;
+			flex-direction: row;
 			align-items: center;
+			justify-content: center;
+			gap: 1.5rem;
+			flex-wrap: nowrap;
 		}
 	}
 </style>
