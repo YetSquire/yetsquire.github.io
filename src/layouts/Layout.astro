@@ -101,6 +101,7 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
                 -webkit-backdrop-filter: blur(8px);
                 backdrop-filter: blur(8px);
                 transition: transform 0.3s;
+                gap: 0.4rem;
             }
 
             .home-overlay-link:hover {
@@ -110,7 +111,8 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
             .arrow {
                 display: inline-block;
                 font-weight: 600;
-                font-size: 3rem;
+                font-size: 1.8rem;
+                line-height: 1;
             }
 
             .home-overlay-link:hover {
