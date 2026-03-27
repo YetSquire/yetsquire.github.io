@@ -62,7 +62,9 @@ const extractFirstSegment = async (
 	if (!source) return "";
 
 	// Prefer the first meaningful <p> when content is HTML-exported.
-	const titleLower = String(title || "").trim().toLowerCase();
+	const titleLower = String(title || "")
+		.trim()
+		.toLowerCase();
 	const pMatches = Array.from(source.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi));
 	for (const match of pMatches) {
 		const raw = match?.[1] || "";
@@ -101,52 +103,57 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 	return new Date(value);
 };
 
-const posts = await Promise.all(Object.entries(modules).map(async ([path, mod]) => {
-	const fm = mod.frontmatter || {};
-	const pathEnd = path.split("/");
-	const id = fm.id || pathEnd[pathEnd.length - 1].replace(/\.(md|mdx)$/, "");
+const posts = await Promise.all(
+	Object.entries(modules).map(async ([path, mod]) => {
+		const fm = mod.frontmatter || {};
+		const pathEnd = path.split("/");
+		const id =
+			fm.id || pathEnd[pathEnd.length - 1].replace(/\.(md|mdx)$/, "");
 
-	const routeImagePath = (imagePath: string): string => {
-		if (!imagePath) return "";
-		if (imagePath.startsWith("/") || imagePath.startsWith("http"))
-			return imagePath;
-		return `/images/posts/${id}/${imagePath}`;
-	};
+		const routeImagePath = (imagePath: string): string => {
+			if (!imagePath) return "";
+			if (imagePath.startsWith("/") || imagePath.startsWith("http"))
+				return imagePath;
+			return `/images/posts/${id}/${imagePath}`;
+		};
 
-	const coverSource = fm.cover || fm.image || "";
-	const cover = coverSource ? routeImagePath(coverSource) : "";
+		const coverSource = fm.cover || fm.image || "";
+		const cover = coverSource ? routeImagePath(coverSource) : "";
 
-	const fmImages = Array.isArray(fm.images)
-		? fm.images.slice()
-		: fm.images
-			? [fm.images]
-			: [];
-	if (fm.image && !fmImages.includes(fm.image)) fmImages.unshift(fm.image);
-	const images = fmImages
-		.map((img: string) => routeImagePath(img))
-		.filter(Boolean);
+		const fmImages = Array.isArray(fm.images)
+			? fm.images.slice()
+			: fm.images
+				? [fm.images]
+				: [];
+		if (fm.image && !fmImages.includes(fm.image))
+			fmImages.unshift(fm.image);
+		const images = fmImages
+			.map((img: string) => routeImagePath(img))
+			.filter(Boolean);
 
-	const fmVideos = Array.isArray(fm.videos)
-		? fm.videos.slice()
-		: fm.videos
-			? [fm.videos]
-			: [];
-	if (fm.video && !fmVideos.includes(fm.video)) fmVideos.unshift(fm.video);
-	const videos = fmVideos.filter(Boolean);
+		const fmVideos = Array.isArray(fm.videos)
+			? fm.videos.slice()
+			: fm.videos
+				? [fm.videos]
+				: [];
+		if (fm.video && !fmVideos.includes(fm.video))
+			fmVideos.unshift(fm.video);
+		const videos = fmVideos.filter(Boolean);
 
-	return {
-		id,
-		title: fm.title || id,
-		description: fm.description || "",
-		excerpt: await extractFirstSegment(mod, fm.title || id),
-		date: fm.date || "1970-01-01",
-		tags: fm.tags || [],
-		cover,
-		images,
-		videos,
-		pathname: `/post/${id}`,
-	};
-}));
+		return {
+			id,
+			title: fm.title || id,
+			description: fm.description || "",
+			excerpt: await extractFirstSegment(mod, fm.title || id),
+			date: fm.date || "1970-01-01",
+			tags: fm.tags || [],
+			cover,
+			images,
+			videos,
+			pathname: `/post/${id}`,
+		};
+	}),
+);
 
 const manualPosts = [
 	{
@@ -188,7 +195,10 @@ const manualPosts = [
 
 const allPosts = [
 	...manualPosts.filter(
-		(manual) => !posts.some((p) => p.id === manual.id || p.pathname === manual.pathname),
+		(manual) =>
+			!posts.some(
+				(p) => p.id === manual.id || p.pathname === manual.pathname,
+			),
 	),
 	...posts,
 ];
@@ -202,38 +212,59 @@ const sortedPosts = allPosts.sort(
 ---
 
 <Layout title="Home | My Blog">
-	<script is:inline set:html={initPostsCode}></script>
+	<script is:inline set:html={initPostsCode} />
 
 	<div class="hero">
 		<section class="introduction">
-			<div class="hero-image" role="img"></div>
+			<p class="typed-subtitle">
+				<span id="typed-text"></span>
+				<span class="cursor">|</span>
+			</p>
 
-			<div class="intro-text">
-				<p class="typed-subtitle">
-					<span id="typed-text">Hello</span>
-					<span class="cursor">|</span>
-				</p>
-				<p>
-					My name is <a
-						class="special-link"
-						style={`--special-link-color: ${TEXT_COLORS.About};`}
-						href="/"
-						data-post-tag="About">Andy</a
-					>, an XR dev and history nerd
+			<div class="intro-row">
+				<div class="hero-image" role="img"></div>
 
-					<br/><br/>
-					Here are my <a
-						class="special-link"
-						style={`--special-link-color: ${TEXT_COLORS.Project};`}
-						href="/"
-						data-post-tag="Project">projects</a
-					>, here are my <a
-						class="special-link"
-						style={`--special-link-color: ${TEXT_COLORS.Blog};`}
-						href="/"
-						data-post-tag="Thought">thoughts</a
-					>.
-				</p>
+				<div class="intro-text">
+					<p class="intro-paragraph">
+						My name is Andy, I'm an extended reality developer and history nerd. I
+						graduated from the University of Michigan combining
+						those interests by building systems that will shake the
+						world.
+						<br /><br />
+						I've recreated a
+						<a href="/post/lost-film" target="_blank">lost film</a>
+						in VR, developed
+						<a href="/post/smart-glasses" target="_blank"
+							>smart glasses</a
+						>
+						that remember everything, and built a neurotech
+						<a href="/post/superhero-simulator" target="_blank"
+							>superhero simulator</a
+						>. Today, I'm helping define the future with the
+						Palantir Mixed Reality team.
+
+						<br /><br />
+
+						This website is set up as a series of posts,
+						<br />
+						<!--data-post-tag="About"-->
+						<!-- class="special-link"
+							style={`--special-link-color: ${TEXT_COLORS.About};`} -->
+						<a
+							href="/post/about-me">about me</a
+						>, my <a
+							class="special-link"
+							style={`--special-link-color: ${TEXT_COLORS.Project};`}
+							href="/"
+							data-post-tag="Project">projects</a
+						>, and my <a
+							class="special-link"
+							style={`--special-link-color: ${TEXT_COLORS.Blog};`}
+							href="/"
+							data-post-tag="Thought">thoughts</a
+						>
+					</p>
+				</div>
 			</div>
 		</section>
 	</div>
@@ -261,18 +292,10 @@ const sortedPosts = allPosts.sort(
 				</button>
 			</div>
 			<div class="tag-buttons">
-				<button
-					id="tag-all"
-					class="filter-tag active"
-				>
-					All
-				</button>
+				<button id="tag-all" class="filter-tag active"> All </button>
 				{
 					allTags.map((tag) => (
-						<button
-							class="filter-tag"
-							data-tag={tag}
-						>
+						<button class="filter-tag" data-tag={tag}>
 							{tag}
 						</button>
 					))
@@ -282,7 +305,9 @@ const sortedPosts = allPosts.sort(
 
 		<div class="posts-count">
 			<p>
-				Showing {sortedPosts.length} post{sortedPosts.length !== 1 ? "s" : ""}
+				Showing {sortedPosts.length} post{
+					sortedPosts.length !== 1 ? "s" : ""
+				}
 			</p>
 		</div>
 
@@ -293,14 +318,16 @@ const sortedPosts = allPosts.sort(
 						<PostCard post={post} instanceKey={`list-${post.id}`} />
 					))
 				) : (
-					<p class="no-posts">No posts found with the selected tags.</p>
+					<p class="no-posts">
+						No posts found with the selected tags.
+					</p>
 				)
 			}
 		</div>
 	</section>
 </Layout>
 
-	<style>
+<style>
 	.hero {
 		display: flex;
 		flex-direction: column;
@@ -318,6 +345,15 @@ const sortedPosts = allPosts.sort(
 
 	.introduction {
 		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 2.5rem;
+		width: 100%;
+	}
+
+	.intro-row {
+		display: flex;
 		flex-direction: row;
 		align-items: center;
 		justify-content: center;
@@ -329,24 +365,25 @@ const sortedPosts = allPosts.sort(
 		padding-top: 1.5rem;
 	}
 
-	.intro-text > p:not(.typed-subtitle) {
+	.intro-paragraph {
 		font-size: 1.15em;
 		color: #8b949e;
 		margin-bottom: 1.25rem;
 		line-height: 1.6;
-		text-align: left;
+		text-align: justify;
+		text-justify: inter-word;
+		hyphens: auto;
 		justify-content: center;
-		white-space: nowrap;
-		overflow-x: auto;
+		max-width: 320px;
+		width: 100%;
 	}
 
 	.typed-subtitle {
-		font-size: 2.5em;
+		font-size: 3em;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: #000000;
 		text-align: center;
-		margin-bottom: 2rem;
 		font-weight: 700;
 	}
 
@@ -378,8 +415,8 @@ const sortedPosts = allPosts.sort(
 	}
 
 	.hero-image {
-		width: 250px;
-		height: 250px;
+		width: 320px;
+		height: 450px;
 		border-radius: 8px;
 		background-image: url("/images/babel.jpg");
 		background-size: cover;
@@ -479,7 +516,6 @@ const sortedPosts = allPosts.sort(
 	}
 
 	@media (max-width: 768px) {
-
 		.hero {
 			padding: 1.5rem 0 3rem 0;
 			gap: 2rem;
@@ -491,15 +527,19 @@ const sortedPosts = allPosts.sort(
 			gap: 2rem;
 		}
 
+		.intro-row {
+			flex-direction: column;
+			align-items: center;
+			gap: 2rem;
+		}
+
 		.intro-text {
 			padding-top: 0;
 			text-align: center;
 		}
 
-		.intro-text > p:not(.typed-subtitle) {
-			white-space: normal;
-			overflow-x: visible;
-			text-align: center;
+		.intro-paragraph {
+			text-align: justify;
 		}
 
 		.typed-subtitle {
@@ -571,8 +611,8 @@ const sortedPosts = allPosts.sort(
 		container.dataset.typedInit = "1";
 
 		let wordIndex = 0;
-		let charIndex = 5;
-		let deleting = true;
+		let charIndex = 0;
+		let deleting = false;
 		let running = true;
 		let timerId = null;
 
@@ -590,7 +630,8 @@ const sortedPosts = allPosts.sort(
 			if (!deleting) {
 				charIndex = Math.min(charIndex + 1, chars.length);
 				el.textContent = chars.slice(0, charIndex).join("");
-				if (charIndex >= chars.length) { //only the pivot back
+				if (charIndex >= chars.length) {
+					//only the pivot back
 					deleting = true;
 					schedule(2000);
 					return;
