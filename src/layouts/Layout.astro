@@ -33,9 +33,31 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
                 box-sizing: border-box;
             }
 
+            :root {
+                color-scheme: light;
+                --bg: #ffffff;
+                --text: #000000;
+                --muted: #666666;
+                --link: #1a73e8;
+                --link-hover: #1557b0;
+                --border: #e5e7eb;
+                --panel: #ffffff;
+            }
+
+            html[data-theme="dark"] {
+                color-scheme: dark;
+                --bg: #0b0d10;
+                --text: #e6e8eb;
+                --muted: #b5bac3;
+                --link: #8ab4f8;
+                --link-hover: #a7c5ff;
+                --border: #2a2f36;
+                --panel: #11151a;
+            }
+
             html {
-                background-color: #ffffff;
-                color: #000000;
+                background-color: var(--bg);
+                color: var(--text);
             }
 
             body {
@@ -44,8 +66,8 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
                     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
                     "Helvetica Neue", Arial, sans-serif;
                 line-height: 1.6;
-                color: #000000;
-                background-color: #ffffff;
+                color: var(--text);
+                background-color: var(--bg);
             }
 
             button,
@@ -64,11 +86,11 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
             footer {
                 margin-top: 4rem;
                 padding: 2rem 1rem;
-                background-color: #ffffff;
+                background-color: var(--bg);
                 text-align: center;
-                color: #666666;
+                color: var(--muted);
                 font-size: 0.9rem;
-                border-top: 1px solid #e5e7eb;
+                border-top: 1px solid var(--border);
                 font-family: "Antic" !important;
             }
 
@@ -77,13 +99,13 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
             }
 
             a {
-                color: #1a73e8;
+                color: var(--link);
                 text-decoration: none;
                 transition: color 0.2s;
             }
 
             a:hover {
-                color: #1557b0;
+                color: var(--link-hover);
             }
 
             .posts-header {
@@ -136,9 +158,38 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
                 text-decoration-thickness: 2px;
                 text-underline-offset: 4px;
             }
+
+            .theme-toggle {
+                position: fixed;
+                top: 0.5rem;
+                right: 1rem;
+                z-index: 50;
+                padding: 0.35rem 0.8rem;
+                border-radius: 999px;
+                border: 1px solid var(--border);
+                background: var(--panel);
+                color: var(--text);
+                font-family: "Antic", sans-serif;
+                font-size: 0.9rem;
+                cursor: pointer;
+                transition:
+                    transform 0.2s ease,
+                    border-color 0.2s ease,
+                    background 0.2s ease;
+            }
+
+            .theme-toggle:hover,
+            .theme-toggle:focus-visible {
+                transform: translateY(-2px);
+                border-color: var(--link);
+                outline: none;
+            }
         </style>
     </head>
     <body>
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode">
+            Dark
+        </button>
         {isPostsPage && (
             <header class="posts-header">
                 <a
@@ -158,5 +209,26 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
             <p>&copy; Imitation is the sincerest form of flattery. Copy as you see fit. </p>
         </footer>
 
+        <script is:inline>
+            (function () {
+                const storageKey = "theme";
+                const root = document.documentElement;
+                const btn = document.getElementById("theme-toggle");
+                if (!btn) return;
+
+                const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                const saved = localStorage.getItem(storageKey);
+                const initial = saved || (prefersDark ? "dark" : "light");
+                root.dataset.theme = initial;
+                btn.textContent = initial === "dark" ? "Light" : "Dark";
+
+                btn.addEventListener("click", () => {
+                    const next = root.dataset.theme === "dark" ? "light" : "dark";
+                    root.dataset.theme = next;
+                    localStorage.setItem(storageKey, next);
+                    btn.textContent = next === "dark" ? "Light" : "Dark";
+                });
+            })();
+        </script>
     </body>
 </html>
