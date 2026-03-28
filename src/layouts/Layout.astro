@@ -33,6 +33,20 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
                 box-sizing: border-box;
             }
 
+            :root {
+                --chip-bg: #ffffff;
+                --chip-text: #666;
+                --chip-border: #666;
+
+                --chip-hover-bg: #ffffff;
+                --chip-hover-text: #333;
+                --chip-hover-border: #333;
+                
+                --chip-active-bg: #666;
+                --chip-active-text: #ffffff;
+                --chip-active-border: #333;
+            }
+
             html {
                 background-color: #ffffff;
                 color: #000000;

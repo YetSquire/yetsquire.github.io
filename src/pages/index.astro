@@ -457,8 +457,8 @@ const sortedPosts = allPosts.sort(
 
 	.expand-toggle {
 		padding: 0.45rem 0.9rem;
-		border: 2px solid #ddd;
-		background: #ffffff;
+		border: 1px solid var(--chip-border);
+		background: var(--chip-bg);
 		border-radius: 20px;
 		cursor: pointer;
 		font-size: 0.9em;
@@ -467,8 +467,9 @@ const sortedPosts = allPosts.sort(
 	}
 
 	.expand-toggle:hover {
-		border-color: #0066cc;
-		color: #0066cc;
+		transform: translateY(-1px);
+		border-color: var(--chip-border);
+		color: var(--chip-text);
 	}
 
 	.tag-buttons {
@@ -480,25 +481,26 @@ const sortedPosts = allPosts.sort(
 
 	.filter-tag {
 		padding: 0.5rem 1rem;
-		background-color: white;
-		border: 2px solid #ddd;
+		background-color: var(--chip-bg);
+		border: 1px solid var(--chip-border);
+		color: var(--chip-text);
 		border-radius: 20px;
-		color: #333;
 		cursor: pointer;
 		transition: all 0.2s;
 		font-size: 0.9em;
-		font-family: inherit;
 	}
 
 	.filter-tag:hover {
-		border-color: #0066cc;
-		color: #0066cc;
+		transform: translateY(-1px);
+		background-color: var(--chip-hover-bg);
+		border-color: var(--chip-hover-border);
+		color: var(--chip-hover-text);
 	}
 
 	.filter-tag.active {
-		background-color: #0066cc;
-		border-color: #0066cc;
-		color: white;
+		background-color: var(--chip-active-bg);
+		border-color: var(--chip-active-border);
+		color: var(--chip-active-text);
 	}
 
 	.posts-count {
