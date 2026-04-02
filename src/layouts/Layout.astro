@@ -15,15 +15,28 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
 	        <meta charset="utf-8" />
 	        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 	        <meta name="viewport" content="width=device-width" />
-	        <link rel="preconnect" href="https://fonts.googleapis.com" />
-	        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
-            <link rel="preload" href="https://fonts.gstatic.com/s/merriweather/v30/u-440qyriQwlOrhSvowK_l521wRpX-BI.woff2" as="font" type="font/woff2" crossorigin>
+            <link rel="preconnect" href="https://fonts.googleapis.com" />
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
 	        <link
 	            href="https://fonts.googleapis.com/css2?family=Antic&display=swap"
 	            rel="stylesheet"
 	        />
+            {isPostsPage && (
+                <>
+                    <link
+                        rel="preload"
+                        href="https://fonts.gstatic.com/s/merriweather/v30/u-440qyriQwlOrhSvowK_l521wRpX-BI.woff2"
+                        as="font"
+                        type="font/woff2"
+                        crossorigin
+                    />
+                    <link
+                        href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300&display=block"
+                        rel="stylesheet"
+                    />
+                </>
+            )}
 	        <title>{title}</title>
 	        <ClientRouter />
 	        <style is:global>
@@ -60,6 +73,16 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
                 line-height: 1.6;
                 color: #000000;
                 background-color: #ffffff;
+            }
+
+            body.post-page .post-content {
+                font-family:
+                    "Merriweather",
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    "Helvetica Neue", Arial, sans-serif;
+                font-size: 11pt;
+                font-weight: 300;
+                line-height: 1.6;
             }
 
             button,
@@ -153,7 +176,7 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
             }
         </style>
     </head>
-    <body>
+    <body class={isPostsPage ? "post-page" : undefined}>
         {isPostsPage && (
             <header class="posts-header">
                 <a
