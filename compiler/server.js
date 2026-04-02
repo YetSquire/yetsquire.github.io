@@ -309,6 +309,35 @@ function extractHeadStyleHtml(html) {
   return styles.join("\n");
 }
 
+function stripFontImportsAndFamiliesFromCss(cssText) {
+  let css = String(cssText || "");
+  css = css.replace(/@import\s+url\(([^)]+)\)\s*;?/gi, "");
+  css = css.replace(/@import\s+["'][^"']+["']\s*;?/gi, "");
+  css = css.replace(/font-family\s*:\s*[^;}{]+;?/gi, "");
+  return css;
+}
+
+function sanitizeExportedStyleHtml(styleHtml) {
+  const raw = String(styleHtml || "");
+  if (!raw.trim()) return "";
+  const cleaned = raw.replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/gi, (full, attrs, css) => {
+    const stripped = stripFontImportsAndFamiliesFromCss(css);
+    if (!stripped.trim()) return "";
+    return `<style${attrs}>${stripped}</style>`;
+  });
+  return cleaned.trim();
+}
+
+function sanitizeStyleTagsInHtml(html) {
+  const raw = String(html || "");
+  if (!raw.trim()) return raw;
+  return raw.replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/gi, (full, attrs, css) => {
+    const stripped = stripFontImportsAndFamiliesFromCss(css);
+    if (!stripped.trim()) return "";
+    return `<style${attrs}>${stripped}</style>`;
+  });
+}
+
 function stripMetaHeaderFromExportHtml(bodyHtml) {
   // Best-effort: remove the first Title/Date/Tags paragraphs, regardless of styling.
   let html = String(bodyHtml || "");
@@ -1019,7 +1048,7 @@ app.post("/compile", async (req, res) => {
     try {
       // 1) Best: use native docs.google.com export endpoint (preserves lists/tabs exactly).
       const exported = await exportTabHtmlViaDocs({ docId, tabId });
-      const styleHtml = extractHeadStyleHtml(exported);
+      const styleHtml = sanitizeExportedStyleHtml(extractHeadStyleHtml(exported));
       const exportBody = extractBodyInnerHtml(exported);
       const rewritten = await rewriteAndDownloadImagesFromExportHtml({ html: exportBody, postId });
       tabHtml = `${styleHtml ? styleHtml + "\n" : ""}<div class="doc-export">${rewritten.html}</div>`;
@@ -1030,7 +1059,7 @@ app.post("/compile", async (req, res) => {
       try {
         renderMode = "drive_export_html";
         const exported = await exportDocHtmlViaDrive(docId);
-        const styleHtml = extractHeadStyleHtml(exported);
+        const styleHtml = sanitizeExportedStyleHtml(extractHeadStyleHtml(exported));
         const exportBody = extractBodyInnerHtml(exported);
         const extracted = extractTabSectionFromExportHtml({
           exportBodyHtml: exportBody,
@@ -1104,6 +1133,7 @@ app.post("/compile", async (req, res) => {
     body = scrubDocExportMetaHtml(body);
     body = stripMetaHeaderFromExportHtml(body);
     body = stripMetaHeaderLines(body);
+    body = sanitizeStyleTagsInHtml(body);
 
     const frontmatter = [
       "---",

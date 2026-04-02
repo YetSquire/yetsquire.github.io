@@ -52,6 +52,14 @@ const videos = Array.isArray(fm.videos) ? fm.videos : (fm.videos ? [fm.videos] :
 ---
 
 <Layout title={fm.title || slug}>
+    <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300&display=swap"
+            rel="stylesheet"
+        />
+    </head>
     <article class="post-full">
         {cover && <img class="cover" src={cover} alt={fm.title} />}
 
@@ -61,7 +69,17 @@ const videos = Array.isArray(fm.videos) ? fm.videos : (fm.videos ? [fm.videos] :
     </article>
 </Layout>
 
-<style>
+<style is:global>
+    .post-content {
+        font-family:
+            "Merriweather",
+            -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+            "Helvetica Neue", Arial, sans-serif;
+        font-size: 11pt;
+        font-weight: 300;
+        line-height: 1.6;
+    }
+
 	.post-full {
 		margin-top: 2rem;
 		opacity: 0;
