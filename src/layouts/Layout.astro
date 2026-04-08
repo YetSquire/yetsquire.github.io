@@ -129,7 +129,7 @@ const showSocialHeader = isHomePage || isAboutPage;
 
             .posts-header {
                 position: static;
-                padding: 0.5rem 1rem;
+                padding: 1rem 1rem;
             }
 
             .posts-header--social {
@@ -143,7 +143,11 @@ const showSocialHeader = isHomePage || isAboutPage;
                 display: flex;
                 justify-content: flex-end;
                 align-items: center;
-                padding: 0.5rem 1rem;
+                position: absolute;
+                top: 1rem;
+                right: 1rem;
+                padding: 0;
+                margin: 0;
             }
 
             .home-social {
@@ -321,27 +325,5 @@ const showSocialHeader = isHomePage || isAboutPage;
         <footer>
             <p>&copy; Imitation is the sincerest form of flattery. Copy as you see fit. </p>
         </footer>
-
-        <script>
-            // Ensure links open in a new tab by default, even with client-side routing.
-            const setLinkTargets = () => {
-                document.querySelectorAll("a[href]").forEach((link) => {
-                    if (link.getAttribute("target")) return;
-                    const href = link.getAttribute("href") || "";
-                    if (href.startsWith("/post/")) {
-                        link.setAttribute("target", "_self");
-                        return;
-                    }
-                    link.setAttribute("target", "_blank");
-                    const rel = link.getAttribute("rel") || "";
-                    if (!/\bnoopener\b/.test(rel)) {
-                        link.setAttribute("rel", `${rel} noopener`.trim());
-                    }
-                });
-            };
-
-            document.addEventListener("DOMContentLoaded", setLinkTargets);
-            document.addEventListener("astro:page-load", setLinkTargets);
-        </script>
     </body>
 </html>
