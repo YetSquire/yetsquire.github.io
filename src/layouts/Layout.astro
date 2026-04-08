@@ -8,6 +8,9 @@ interface Props {
 const { title } = Astro.props;
 
 const isPostsPage = Astro.url.pathname.startsWith('/post/');
+const isHomePage = Astro.url.pathname === "/";
+const isAboutPage = Astro.url.pathname === "/post/about-me";
+const showSocialHeader = isHomePage || isAboutPage;
 ---
 
 <html lang="en">
@@ -129,6 +132,73 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
                 padding: 0.5rem 1rem;
             }
 
+            .posts-header--social {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1rem;
+            }
+
+            .home-header {
+                display: flex;
+                justify-content: flex-end;
+                align-items: center;
+                padding: 0.5rem 1rem;
+            }
+
+            .home-social {
+                display: inline-flex;
+                gap: 0.6rem;
+                align-items: center;
+            }
+
+            .home-social a:hover {
+                text-decoration: none;
+            }
+
+            .social-icon {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 50px;
+                height: 50px;
+                border-radius: 999px;
+                border: 1px solid #e2e2e2;
+                color: #000000;
+                text-decoration: none;
+                background: #fff;
+                transition: transform 160ms ease, border-color 160ms ease;
+                font-size: 1.5rem;
+                line-height: 1;
+            }
+
+            .social-icon:hover,
+            .social-icon:focus-visible {
+                transform: translateY(-2px);
+                border-color: #111;
+                outline: none;
+            }
+
+            .social-icon-img {
+                width: 30px;
+                height: 30px;
+                object-fit: contain;
+                display: block;
+                filter: grayscale(100%);
+            }
+
+            .sr-only {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
+            }
+
             .home-overlay-link {
                 display: inline-flex;
                 align-items: baseline;
@@ -177,7 +247,63 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
         </style>
     </head>
     <body class={isPostsPage ? "post-page" : undefined}>
-        {isPostsPage && (
+        {showSocialHeader && (
+            <header class={isPostsPage ? "posts-header posts-header--social" : "home-header"}>
+                {isPostsPage && (
+                    <a
+                        id="home-link"
+                        class="home-overlay-link"
+                        href="/"
+                        aria-label="Home"
+                    >
+                        <span class="arrow">←posts</span>
+                    </a>
+                )}
+                <nav class="home-social" aria-label="Social links">
+                    <a
+                        class="social-icon"
+                        href="/andy-yao-resume.pdf"
+                        target="_blank"
+                        rel="noopener"
+                        aria-label="Resume"
+                    >
+                        <span aria-hidden="true">&#128196;</span>
+                        <span class="sr-only">Resume</span>
+                    </a>
+                    <a
+                        class="social-icon"
+                        href="https://www.linkedin.com/in/andy-yao-cs"
+                        target="_blank"
+                        rel="noopener"
+                        aria-label="LinkedIn"
+                    >
+                        <img
+                            class="social-icon-img"
+                            src="/images/about/linkedin.png"
+                            alt=""
+                            aria-hidden="true"
+                        />
+                        <span class="sr-only">LinkedIn</span>
+                    </a>
+                    <a
+                        class="social-icon"
+                        href="https://github.com/YetSquire"
+                        target="_blank"
+                        rel="noopener"
+                        aria-label="GitHub"
+                    >
+                        <img
+                            class="social-icon-img"
+                            src="/images/about/github.png"
+                            alt=""
+                            aria-hidden="true"
+                        />
+                        <span class="sr-only">GitHub</span>
+                    </a>
+                </nav>
+            </header>
+        )}
+        {isPostsPage && !showSocialHeader && (
             <header class="posts-header">
                 <a
                     id="home-link"
@@ -196,5 +322,26 @@ const isPostsPage = Astro.url.pathname.startsWith('/post/');
             <p>&copy; Imitation is the sincerest form of flattery. Copy as you see fit. </p>
         </footer>
 
+        <script>
+            // Ensure links open in a new tab by default, even with client-side routing.
+            const setLinkTargets = () => {
+                document.querySelectorAll("a[href]").forEach((link) => {
+                    if (link.getAttribute("target")) return;
+                    const href = link.getAttribute("href") || "";
+                    if (href.startsWith("/post/")) {
+                        link.setAttribute("target", "_self");
+                        return;
+                    }
+                    link.setAttribute("target", "_blank");
+                    const rel = link.getAttribute("rel") || "";
+                    if (!/\bnoopener\b/.test(rel)) {
+                        link.setAttribute("rel", `${rel} noopener`.trim());
+                    }
+                });
+            };
+
+            document.addEventListener("DOMContentLoaded", setLinkTargets);
+            document.addEventListener("astro:page-load", setLinkTargets);
+        </script>
     </body>
 </html>

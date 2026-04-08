@@ -26,8 +26,10 @@ import { TEXT_COLORS } from "../../config/site";
 
 						<br /><br />
 						I tend to use the tower of Babel as a profile picture.
+						<br />
+						Credit goes to Pieter Bruegel the Elder, <a href="https://www.boijmans.nl/en/collection/in-depth/bruegel-s-tower-of-babel" target="_blank" rel="noopener noreferrer">c. 1563</a>
 					</p>
-				</div>
+				
 			</div>
 		</section>
 
@@ -36,50 +38,9 @@ import { TEXT_COLORS } from "../../config/site";
 			<p>
 				The best way to reach me is via email: andyyao15 [at] gmail [dot] com
 				<br>
-				You might also find the below information useful
+				You can also find my resume, LinkedIn, and GitHub in the header above.
 			</p>
-
-			<div class="social-buttons" aria-label="Social links">
-				<a
-					class="icon-btn"
-					href="https://github.com/YetSquire"
-					target="_blank"
-					rel="noopener"
-					aria-label="GitHub"
-				>
-					<img src="/images/about/github.png" alt="GitHub" />
-				</a>
-
-				<a
-					class="icon-btn"
-					href="https://www.linkedin.com/in/andy-yao-cs"
-					target="_blank"
-					rel="noopener"
-					aria-label="LinkedIn"
-				>
-					<img src="/images/about/linkedin.png" alt="LinkedIn" />
-				</a>
-
-				<div class="icon-resume-wrapper">
-					<a
-						class="icon-btn"
-						href="/resume.pdf"
-						target="_blank"
-						rel="noopener"
-						aria-describedby="resume-attrib"
-						aria-label="Resume"
-					>
-						<img src="/images/about/resume.png" alt="Resume" />
-					</a>
-					<div id="resume-attrib" class="tooltip" role="tooltip">
-						Andy's note- resume icon by <a
-							href="https://www.flaticon.com/free-icons/resume"
-							target="_blank"
-							rel="noopener">Freepik</a
-						>
-					</div>
-				</div>
-			</div>
+			
 		</section>
 
 		<section>
@@ -111,8 +72,20 @@ import { TEXT_COLORS } from "../../config/site";
 						style={`--special-link-color: ${TEXT_COLORS.Blog};`}
 						href="/post/about-this-website">meta-post</a
 					>.
-				</p>
-			</section>
+			</p>
+		</section>
+
+		<section>
+			<h2>Why The Tower of Babel?</h2>
+			<p>
+				First, I'd like to credit the artist, Pieter Bruegel the Elder, for his work. To my untrained eye, both at age 12, and today, it looks incredible. 
+
+				<br /><br />
+				The Doylist reason I use The Little Tower of Babel as a profile picture is that I thought it looked cool as a child. It stuck with me, and I started using it as a sort of leitmotif.
+				<br /><br />
+				The Watsonian answer is that 
+			</p>
+		</section>
 	</article>
 </Layout>
 
@@ -195,115 +168,5 @@ import { TEXT_COLORS } from "../../config/site";
 		}
 	}
 
-	/* Social buttons */
-	.social-buttons {
-		display: flex;
-		gap: 5rem;
-		justify-content: center;
-		margin-top: 2rem;
-	}
-
-	.icon-btn {
-		flex: 0 0 100px;
-		overflow: hidden;
-		background-color: #ffffff;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 100px;
-		height: 100px;
-		border-radius: 16px;
-		text-decoration: none;
-		transition:
-			transform 160ms ease,
-			background 160ms ease,
-			box-shadow 160ms ease;
-		box-shadow: 0 6px 14px rgba(12, 18, 22, 0.06);
-	}
-
-	.icon-btn:hover,
-	.icon-btn:focus {
-		transform: translateY(-4px) scale(1.03);
-		outline: none;
-	}
-
-	.icon-btn img {
-		width: 105%;
-		height: 105%;
-		display: block;
-		object-fit: cover;
-	}
-
-	.icon-resume-wrapper {
-		position: relative;
-		display: inline-block;
-		top: 0.15rem;
-	}
-
-	/* Tooltip for resume attribution */
-	.tooltip {
-		position: absolute;
-		left: 50%;
-		transform: translateX(-50%) translateY(8px);
-		background: rgba(0, 0, 0, 0.85);
-		color: white;
-		padding: 0.45rem 0.6rem;
-		border-radius: 6px;
-		font-size: 0.8rem;
-		white-space: nowrap;
-		opacity: 0;
-		pointer-events: none;
-		transition:
-			opacity 160ms ease,
-			transform 160ms ease;
-		z-index: 30;
-	}
-
-	.icon-resume-wrapper:hover .tooltip,
-	.icon-resume-wrapper:focus-within .tooltip {
-		opacity: 1;
-		transform: translateX(-50%) translateY(0);
-		pointer-events: auto;
-	}
-
-	.tooltip a {
-		color: #fff;
-		text-decoration: underline;
-	}
-
-	@media (max-width: 480px) {
-		.social-buttons {
-			flex-direction: row;
-			align-items: center;
-			justify-content: center;
-			gap: 1.5rem;
-			flex-wrap: nowrap;
-		}
-
-		.icon-btn {
-			width: 60px;
-			height: 60px;
-			flex: 0 0 60px;
-		}
-	}
 </style>
 
-<script>
-	// When the user leaves the tab, blur any focused icon buttons so they are unfocused when returning.
-	(function () {
-		document.addEventListener("visibilitychange", () => {
-			if (document.visibilityState === "hidden") {
-				document.querySelectorAll(".icon-btn").forEach((btn) => {
-					try {
-						if (btn instanceof HTMLElement) btn.blur();
-					} catch (e) {}
-				});
-				document.querySelectorAll("resume-attrib").forEach((btn) => {
-					try {
-						if (btn instanceof HTMLElement) btn.blur();
-					} catch (e) {}
-				});
-			}
-		});
-	})();
-</script>
