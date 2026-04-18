@@ -162,7 +162,7 @@ const manualPosts = [
 		description: "A quick overview of who I am and how to reach me.",
 		excerpt: "A quick overview of who I am and how to reach me.",
 		date: "2026-01-01",
-		tags: ["About"],
+		tags: ["Featured", "About", "Thought"],
 		cover: "",
 		images: [],
 		videos: [],
@@ -204,6 +204,9 @@ const allPosts = [
 ];
 
 const allTags = [...new Set(allPosts.flatMap((post) => post.tags))].sort(); // comically inefficient, not too bad
+const orderedTags = [
+	...new Set(["Featured", ...allTags.filter((tag) => tag !== "Featured")]),
+];
 const sortedPosts = allPosts.sort(
 	(a, b) =>
 		parseDateOnlyAsLocalDate(b.date).getTime() -
@@ -226,7 +229,10 @@ const sortedPosts = allPosts.sort(
 
 				<div class="intro-text">
 					<p class="intro-paragraph">
-						My name is Andy, I'm an extended reality developer and history nerd. I
+						My name is 
+						<a
+							href="/post/about-me">Andy</a
+						>, I'm an extended reality developer and history nerd. I
 						graduated from the University of Michigan combining
 						those interests by building systems that will shake the
 						world.
@@ -240,29 +246,24 @@ const sortedPosts = allPosts.sort(
 						that remember everything, and built a neurotech
 						<a href="/post/the-orbit-suite"
 							>superhero simulator</a
-						>. Today, I'm helping define the future with the
+						>. Today, I'm defining the future with the
 						Palantir Mixed Reality team.
 
 						<br /><br />
 
-						This website is set up as a series of posts,
-						<br />
-						<!--data-post-tag="About"-->
-						<!-- class="special-link"
-							style={`--special-link-color: ${TEXT_COLORS.About};`} -->
+						This website has two kinds of entries,
 						<a
-							href="/post/about-me">about me</a
-						>, my <a
 							class="special-link"
 							style={`--special-link-color: ${TEXT_COLORS.Project};`}
 							href="/"
 							data-post-tag="Project">projects</a
-						>, and my <a
+						>, detailing my past work, and <a
 							class="special-link"
 							style={`--special-link-color: ${TEXT_COLORS.Blog};`}
 							href="/"
 							data-post-tag="Thought">thoughts</a
-						>
+						>,
+						which are a little more narrative
 					</p>
 				</div>
 			</div>
@@ -294,7 +295,7 @@ const sortedPosts = allPosts.sort(
 			<div class="tag-buttons">
 				<button id="tag-all" class="filter-tag active"> All </button>
 				{
-					allTags.map((tag) => (
+					orderedTags.map((tag) => (
 						<button class="filter-tag" data-tag={tag}>
 							{tag}
 						</button>

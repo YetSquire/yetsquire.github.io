@@ -219,7 +219,11 @@ function bootHomePosts() {
 			smoothScrollToElement(postsSection, 650);
 		} else if (isHome) {
 			const savedTags = parseTagCookie(getCookie(HOME_TAGS_COOKIE));
-			if (savedTags.length) postsApi.setSelectedTags(savedTags);
+			if (savedTags.length) {
+				postsApi.setSelectedTags(savedTags);
+			} else {
+				postsApi.setSelectedTags(["Featured"]);
+			}
 		}
 	} catch {
 		// ignore
