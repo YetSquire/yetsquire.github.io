@@ -232,7 +232,7 @@ const sortedPosts = allPosts.sort(
 						My name is 
 						<a
 							href="/post/about-me">Andy</a
-						>, I'm an extended reality developer and history nerd. I
+						>. I'm an extended reality developer and history nerd. I
 						graduated from the University of Michigan combining
 						those interests by building systems that will shake the
 						world.
@@ -259,11 +259,11 @@ const sortedPosts = allPosts.sort(
 							data-post-tag="Project">projects</a
 						>, detailing my past work, and <a
 							class="special-link"
-							style={`--special-link-color: ${TEXT_COLORS.Blog};`}
+							style={`--special-link-color: ${TEXT_COLORS.Thought};`}
 							href="/"
 							data-post-tag="Thought">thoughts</a
 						>,
-						which are a little more narrative
+						which are traditional blog posts
 					</p>
 				</div>
 			</div>
@@ -314,11 +314,15 @@ const sortedPosts = allPosts.sort(
 
 		<div class="posts-list" id="posts-list">
 			{
-				sortedPosts.length > 0 ? (
-					sortedPosts.map((post) => (
-						<PostCard post={post} instanceKey={`list-${post.id}`} />
-					))
-				) : (
+					sortedPosts.length > 0 ? (
+						sortedPosts.map((post) => (
+							<PostCard
+								post={post}
+								instanceKey={`list-${post.id}`}
+								defaultExpanded={post.tags?.includes("Project")}
+							/>
+						))
+					) : (
 					<p class="no-posts">
 						No posts found with the selected tags.
 					</p>

@@ -2,6 +2,7 @@
 import { TEXT_COLORS } from "../config/site"; 
 
 const { post, instanceKey } = Astro.props;
+const defaultExpanded = Boolean(Astro.props.defaultExpanded);
 const displayImage = post.cover;
 const snippetImage =
 	(Array.isArray(post.images) && post.images[0]) ? post.images[0] : displayImage;
@@ -9,10 +10,10 @@ const uniqueId = instanceKey ? String(instanceKey) : String(post.id);
 
 const dataTags = (post.tags || []).join(',');
 
-let color = TEXT_COLORS.Blog; // default color
+let color = TEXT_COLORS.Thought; // default color
 
-if (post.tags.includes('About')) {
-	color = TEXT_COLORS.About;
+if (post.tags.includes('Project') && post.tags.includes('Thought')) {
+	color = TEXT_COLORS.Both;
 } else if (post.tags.includes('Project')) {
 	color = TEXT_COLORS.Project;
 }
@@ -29,6 +30,7 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 		class="snippet-toggle"
 		type="checkbox"
 		id={`snippet-${uniqueId}`}
+		checked={defaultExpanded}
 		aria-label="Toggle snippet"
 		aria-controls={`snippet-panel-${uniqueId}`}
 	/>
