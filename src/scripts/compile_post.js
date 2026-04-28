@@ -64,7 +64,7 @@ function transformBody(body, id) {
   return { content, cover };
 }
 
-function compile(blogDraftName, manualDate = null) {
+function compile(blogDraftName, manualDate = null, link = "") {
   const sourcePath = path.join(ROOT, "src/content/drafts", `${blogDraftName}.md`);
   const raw = fs.readFileSync(sourcePath, "utf8");
   const { frontmatter, body } = parseFrontmatter(raw);
@@ -85,6 +85,7 @@ function compile(blogDraftName, manualDate = null) {
   const { id, date } = index[title];
   const [year, month] = date.split("-");
   const pathname = `/post/${id}`;
+  const postLink = String(link || "").trim();
 
   const { content, cover } = transformBody(body, id);
 
@@ -93,18 +94,21 @@ function compile(blogDraftName, manualDate = null) {
     : [];
   const tagsYaml = tagsArray.map(t => `  - ${t}`).join("\n");
 
-  const output = `---
-id: "${id}"
-pathname: "${pathname}"
-title: "${title}"
-date: "${date}"
-tags:
-${tagsYaml}
-${cover ? `cover: ${cover}` : ""}
----
+  const frontmatterLines = [
+    "---",
+    `id: "${id}"`,
+    `pathname: "${pathname}"`,
+    ...(postLink ? [`link: "${postLink.replace(/"/g, '\\"')}"`] : []),
+    `title: "${title}"`,
+    `date: "${date}"`,
+    "tags:",
+    tagsYaml,
+    ...(cover ? [`cover: ${cover}`] : []),
+    "---",
+    "",
+  ];
 
-${content}
-`;
+  const output = `${frontmatterLines.join("\n")}${content}\n`;
 
   const outPath = path.join(ROOT, "src/content/posts", year, month, `${id}.md`);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
@@ -112,4 +116,4 @@ ${content}
   console.log(`Compiled → ${outPath}`);
 }
 
-compile(process.argv[2], process.argv[3]);
+compile(process.argv[2], process.argv[3], process.argv[4] || "");

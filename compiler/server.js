@@ -61,8 +61,10 @@ function scrubDocExportMetaHtml(html) {
   // - Remove "Title: " (first occurrence)
   // - Remove "Date: " (first occurrence)
   // - Remove the tags section entirely
+  // - Remove the optional link line entirely
   replaceFirst(/Title:\s*/i, "");
   replaceFirst(/Date:\s*/i, "");
+  replaceFirst(/Link:\s*/i, "");
 
   // Tags can appear as a single line or a "Tags:" paragraph followed by a list.
   // Ensure we only remove a single <p> block (do not span across multiple paragraphs).
@@ -148,25 +150,28 @@ function extractRequiredMetaFromText(text) {
   const titleMatches = [...head.matchAll(/^Title:\s*(.+)\s*$/gmi)].map(m => m[1].trim());
   const dateMatches = [...head.matchAll(/^Date:\s*(\d{2}\/\d{2}\/\d{4})\s*$/gmi)].map(m => m[1].trim());
   const tagsMatches = [...head.matchAll(/^Tags:\s*(.+)\s*$/gmi)].map(m => m[1].trim());
+  const linkMatches = [...head.matchAll(/^Link:\s*(.+)\s*$/gmi)].map(m => m[1].trim());
 
   if (titleMatches.length !== 1) return { ok: false, error: `Expected exactly one "Title: ..." line near the top (found ${titleMatches.length}).` };
   if (dateMatches.length !== 1) return { ok: false, error: `Expected exactly one "Date: mm/dd/yyyy" line near the top (found ${dateMatches.length}).` };
   if (tagsMatches.length !== 1) return { ok: false, error: `Expected exactly one "Tags: x, y, z" line near the top (found ${tagsMatches.length}).` };
+  if (linkMatches.length > 1) return { ok: false, error: `Expected at most one "Link: ..." line near the top (found ${linkMatches.length}).` };
 
   const postTitle = titleMatches[0];
   const postDate = dateMatches[0];
   const postTags = tagsMatches[0].split(",").map(t => t.trim()).filter(Boolean);
+  const postLink = linkMatches[0] ? linkMatches[0].trim() : "";
 
   if (!postTitle) return { ok: false, error: `"Title:" must not be empty.` };
   if (!isValidMMDDYYYY(postDate)) return { ok: false, error: `"Date:" must be a real date in mm/dd/yyyy (got "${postDate}").` };
   if (postTags.length === 0) return { ok: false, error: `"Tags:" must include at least one tag, comma-separated.` };
 
-  return { ok: true, postTitle, postDate, postTags };
+  return { ok: true, postTitle, postDate, postTags, postLink };
 }
 
 function stripMetaHeaderLines(text) {
   const lines = String(text || "").split(/\r?\n/);
-  const removed = { title: false, date: false, tags: false };
+  const removed = { title: false, date: false, tags: false, link: false };
   const out = [];
 
   for (const line of lines) {
@@ -184,11 +189,44 @@ function stripMetaHeaderLines(text) {
       removed.tags = true;
       continue;
     }
+    if (!removed.link && /^Link:\s*/i.test(trimmed)) {
+      removed.link = true;
+      continue;
+    }
 
     out.push(line);
   }
 
   return out.join("\n").trim();
+}
+
+function stripMatchingMetadataLinkFromBody(text, postLink) {
+  const link = String(postLink || "").trim();
+  if (!link) return String(text || "");
+
+  const raw = String(text || "");
+  const escapedLink = escapeRegExp(link);
+  const encodedLink = encodeURIComponent(link);
+  const escapedEncodedLink = escapeRegExp(encodedLink);
+  const googleQValue = `(?:${escapedEncodedLink}|${escapedLink})`;
+  const patterns = [
+    // Plain metadata URL text.
+    new RegExp(`^\\s*${escapedLink}\\s*$`, "mi"),
+    // Exported anchor that renders the same URL as text.
+    new RegExp(
+      `<p\\b[^>]*>\\s*(?:<span\\b[^>]*>)?\\s*<a\\b[^>]*href=["'][^"']*${escapedLink}[^"']*["'][^>]*>\\s*${escapedLink}\\s*<\\/a>\\s*(?:<\\/span>)?\\s*<\\/p>`,
+      "i"
+    ),
+    // Docs export often rewrites external links through a google.com/url redirect.
+    new RegExp(
+      `<p\\b[^>]*>[\\s\\S]*?<a\\b[^>]*href=["']https:\\/\\/www\\.google\\.com\\/url\\?q=${googleQValue}(?:&|&amp;|["'])[\\s\\S]*?>\\s*${escapedLink}\\s*<\\/a>[\\s\\S]*?<\\/p>`,
+      "i"
+    ),
+  ];
+
+  let out = raw;
+  for (const pattern of patterns) out = out.replace(pattern, "");
+  return out.trim();
 }
 
 function yamlList(items, indent = "  ") {
@@ -344,7 +382,8 @@ function stripMetaHeaderFromExportHtml(bodyHtml) {
   const patterns = [
     /<p\b[^>]*>\s*Title:\s*[\s\S]*?<\/p>/i,
     /<p\b[^>]*>\s*Date:\s*[\s\S]*?<\/p>/i,
-    /<p\b[^>]*>\s*Tags:\s*[\s\S]*?<\/p>/i
+    /<p\b[^>]*>\s*Tags:\s*[\s\S]*?<\/p>/i,
+    /<p\b[^>]*>\s*Link:\s*[\s\S]*?<\/p>/i
   ];
   for (const p of patterns) html = html.replace(p, "");
   return html.trim();
@@ -864,6 +903,21 @@ function escapeRegExp(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function readJsonFile(filePath, fallback = {}) {
+  try {
+    if (!fs.existsSync(filePath)) return fallback;
+    const raw = fs.readFileSync(filePath, "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJsonFile(filePath, value) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, JSON.stringify(value, null, 2) + "\n", "utf8");
+}
+
 function dimensionToPx(dim) {
   const magnitude = Number(dim?.magnitude);
   if (!Number.isFinite(magnitude) || magnitude <= 0) return null;
@@ -1030,6 +1084,7 @@ app.post("/compile", async (req, res) => {
     const postTitle = extracted.postTitle.trim();
     const postDate = extracted.postDate.trim();
     const postTags = extracted.postTags.map(t => t.trim()).filter(Boolean);
+    const postLink = (extracted.postLink || "").trim();
 
     const root = path.resolve(__dirname, "..");
     const outDir = path.join(root, "src", "content", "posts");
@@ -1133,6 +1188,7 @@ app.post("/compile", async (req, res) => {
     body = scrubDocExportMetaHtml(body);
     body = stripMetaHeaderFromExportHtml(body);
     body = stripMetaHeaderLines(body);
+    body = stripMatchingMetadataLinkFromBody(body, postLink);
     body = sanitizeStyleTagsInHtml(body);
 
     const frontmatter = [
@@ -1156,6 +1212,15 @@ app.post("/compile", async (req, res) => {
     fs.mkdirSync(outDir, { recursive: true });
     fs.writeFileSync(outPath, postMarkdown, "utf8");
 
+    // Persist external link outside markdown frontmatter.
+    // This keeps URLs out of post files while still allowing /post/[id] redirects.
+    if (postLink) {
+      const linksPath = path.join(root, "src", "content", "post_links.json");
+      const links = readJsonFile(linksPath, {});
+      links[postId] = postLink;
+      writeJsonFile(linksPath, links);
+    }
+
     res.json({
       ok: true,
       message: `Wrote post ${postId}`,
@@ -1166,6 +1231,7 @@ app.post("/compile", async (req, res) => {
       postDate,
       postDateISO,
       postTags,
+      postLink: postLink || null,
       resolvedTabId: tab?.tabProperties?.tabId,
       cover: cover || null,
       images: rendered.images,

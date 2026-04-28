@@ -24,7 +24,8 @@ function getCookie(name) {
 
 function setCookie(name, value, maxAgeSeconds) {
 	const secure = location.protocol === "https:" ? "; Secure" : "";    
-	document.cookie = `${name}=${value}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
+	// Encode to avoid whitespace/commas/etc tripping cookie parsing in some browsers.
+	document.cookie = `${name}=${encodeURIComponent(String(value || ""))}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
 }
 
 function parseTagCookie(value) {
@@ -140,12 +141,13 @@ function initPostsFilter() {
 		});
 	}
 
-	function setSelectedTags(nextTags) {
+	function setSelectedTags(nextTags, opts = {}) {
 		currentSelectedTags.clear();
 		for (const tag of Array.isArray(nextTags) ? nextTags : []) {
 			if (tag) currentSelectedTags.add(tag);
 		}
-		if (isHomePage()) {
+		const persist = opts.persist !== false;
+		if (persist && isHomePage()) {
 			const tagsValue = Array.from(currentSelectedTags).join(",");
 			setCookie(HOME_TAGS_COOKIE, tagsValue, HOME_COOKIE_MAX_AGE_S);
 		}
@@ -218,11 +220,13 @@ function bootHomePosts() {
 			postsApi.setSelectedTags(tags);
 			smoothScrollToElement(postsSection, 650);
 		} else if (isHome) {
+			const hasTagsCookieKey = String(document.cookie || "").includes(`${HOME_TAGS_COOKIE}=`);
 			const savedTags = parseTagCookie(getCookie(HOME_TAGS_COOKIE));
 			if (savedTags.length) {
 				postsApi.setSelectedTags(savedTags);
-			} else {
-				postsApi.setSelectedTags(["Featured"]);
+			} else if (!hasTagsCookieKey) {
+				// First visit: default to Featured, but don't persist it (so it never overwrites a user's saved filter).
+				postsApi.setSelectedTags(["Featured"], { persist: false });
 			}
 		}
 	} catch {

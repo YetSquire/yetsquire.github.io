@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import postLinks from '../../content/post_links.json';
 
 const { params } = Astro;
 const slug = params.slug;
@@ -24,6 +25,13 @@ if (!mod) {
 }
 
 const fm = mod.frontmatter || {};
+const redirectUrl =
+    (postLinks && typeof postLinks === "object" && typeof postLinks[slug] === "string")
+        ? String(postLinks[slug]).trim()
+        : "";
+if (redirectUrl) {
+    return Astro.redirect(redirectUrl);
+}
 const Content = mod.default;
 const assetId = fm.id || slug;
 
@@ -63,6 +71,14 @@ const videos = Array.isArray(fm.videos) ? fm.videos : (fm.videos ? [fm.videos] :
     <article class="post-full">
         {cover && <img class="cover" src={cover} alt={fm.title} />}
 
+        {externalLink && (
+            <p class="post-source-link">
+                <a href={externalLink} target="_blank" rel="noopener noreferrer">
+                    {externalLink}
+                </a>
+            </p>
+        )}
+
         <section class="post-content">
             <Content />
         </section>
@@ -86,7 +102,24 @@ const videos = Array.isArray(fm.videos) ? fm.videos : (fm.videos ? [fm.videos] :
 		transition: opacity 280ms ease;
 	}
 
+	.post-source-link {
+		margin: 0 0 1rem;
+		font-size: 0.95rem;
+		word-break: break-word;
+	}
+
+	.post-source-link a {
+		color: inherit;
+		text-decoration: underline;
+	}
+
 	html:not(.post-loading) .post-full {
 		opacity: 1;
+	}
+
+	/* The exported document often repeats the metadata URL in-body.
+	   Hide that duplicated link when it matches the frontmatter URL. */
+	.post-content a[href] {
+		word-break: break-word;
 	}
 </style>
