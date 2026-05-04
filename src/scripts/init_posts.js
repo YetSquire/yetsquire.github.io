@@ -4,6 +4,7 @@ const hookedJumpLinks = new WeakSet();
 let cardClickBound = false;
 const HOME_TAGS_COOKIE = "home_tags";
 const HOME_SCROLL_COOKIE = "home_scroll";
+const HOME_EXPAND_COOKIE = "home_expand";
 const HOME_COOKIE_MAX_AGE_S = 60 * 60 * 24 * 14; // 14 days
 
 function isHomePage() {
@@ -78,7 +79,13 @@ function initPostsFilter() {
 	const allBtn = document.getElementById("tag-all");
 	const postsCountEl = document.querySelector(".posts-count p");
 	const expandToggleBtn = document.getElementById("expand-toggle");
-	let expandAllState = null; // null = untouched, true = expanded, false = collapsed
+	const savedExpand = getCookie(HOME_EXPAND_COOKIE);
+	let expandAllState =
+		savedExpand === "collapsed"
+			? false
+			: savedExpand === "expanded"
+				? true
+				: null;
 
 	const currentSelectedTags = new Set();
 
@@ -166,6 +173,13 @@ function initPostsFilter() {
 	if (expandToggleBtn) {
 		expandToggleBtn.addEventListener("click", () => {
 			expandAllState = expandAllState === true ? false : true;
+			if (isHomePage()) {
+				setCookie(
+					HOME_EXPAND_COOKIE,
+					expandAllState ? "expanded" : "collapsed",
+					HOME_COOKIE_MAX_AGE_S,
+				);
+			}
 			updateExpandToggleLabel();
 			applyExpandState();
 		});
@@ -225,7 +239,6 @@ function bootHomePosts() {
 			if (savedTags.length) {
 				postsApi.setSelectedTags(savedTags);
 			} else if (!hasTagsCookieKey) {
-				// First visit: default to Featured, but don't persist it (so it never overwrites a user's saved filter).
 				postsApi.setSelectedTags(["Featured"], { persist: false });
 			}
 		}

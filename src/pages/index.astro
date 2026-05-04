@@ -9,11 +9,6 @@ const modules = import.meta.glob("../content/posts/**/*.{md,mdx}", {
 	eager: true,
 }) as Record<string, any>;
 
-type Featured = {
-	title: string;
-	pathname: string;
-};
-
 const decodeHtmlEntities = (value: string): string => {
 	return String(value || "")
 		.replace(/&nbsp;/g, " ")
@@ -170,28 +165,6 @@ const manualPosts = [
 	},
 ];
 
-// function getFeaturedByTitle(title: string): Featured | null {
-// 	const t = String(title || "").trim();
-// 	if (!t) return null;
-
-// 	const match = posts.find((p) => p.title === t);
-// 	if (match) return { title: match.title, pathname: match.pathname };
-
-// 	const slug = slugify(t, { lower: true, strict: true, trim: true });
-// 	if (!slug) return null;
-// 	return { title: t, pathname: `/post/${slug}` };
-// }
-
-// // Hardcode these by post title (exact match preferred).
-// const FEATURED_A_TITLE = "About This Website";
-
-// const featuredA = getFeaturedByTitle(FEATURED_A_TITLE);
-// const featuredLinks = [featuredA].filter(
-// 	(item): item is Featured => Boolean(item),
-// );
-// const featuredPosts = featuredLinks
-// 	.map((item) => posts.find((post) => post.pathname === item.pathname))
-// 	.filter(Boolean);
 
 const allPosts = [
 	...manualPosts.filter(
@@ -257,32 +230,25 @@ const sortedPosts = allPosts.sort(
 							style={`--special-link-color: ${TEXT_COLORS.Project};`}
 							href="/"
 							data-post-tag="Project">projects</a
-						>, detailing my past work, and <a
+						>, which are short descriptions with blue links to external sites, and <a
 							class="special-link"
 							style={`--special-link-color: ${TEXT_COLORS.Thought};`}
 							href="/"
 							data-post-tag="Thought">thoughts</a
 						>,
-						which are traditional blog posts
+						traditional blog posts with green links. 
+
+						You'll also see posts which are <a
+							class="special-link"
+							style={`--special-link-color: ${TEXT_COLORS.Both};`}
+							href="/"
+							data-post-tag="Thought">both</a
+						>, longer-form talks about my past work in cyan. 
 					</p>
 				</div>
 			</div>
 		</section>
 	</div>
-
-	<!-- <section class="featured">
-		<h2>Featured</h2>
-		<div class="posts-list">
-			{featuredPosts.map((post) => (
-				<PostCard
-					post={post}
-					instanceKey={`featured-${post.id}`}
-					defaultExpanded={true}
-					isFeatured={true}
-				/>
-			))}
-		</div>
-	</section> -->
 
 	<section class="posts-section" id="posts">
 		<div class="filters">
@@ -319,7 +285,7 @@ const sortedPosts = allPosts.sort(
 							<PostCard
 								post={post}
 								instanceKey={`list-${post.id}`}
-								defaultExpanded={post.tags?.includes("Project")}
+								defaultExpanded={true}
 							/>
 						))
 					) : (

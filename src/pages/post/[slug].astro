@@ -25,13 +25,14 @@ if (!mod) {
 }
 
 const fm = mod.frontmatter || {};
+const redirectKey =
+    typeof fm.id === 'string' && fm.id.trim()
+        ? fm.id.trim()
+        : slug;
 const redirectUrl =
-    (postLinks && typeof postLinks === "object" && typeof postLinks[slug] === "string")
-        ? String(postLinks[slug]).trim()
+    (postLinks && typeof postLinks === 'object' && typeof postLinks[redirectKey] === 'string')
+        ? String(postLinks[redirectKey]).trim()
         : "";
-if (redirectUrl) {
-    return Astro.redirect(redirectUrl);
-}
 const Content = mod.default;
 const assetId = fm.id || slug;
 
@@ -67,22 +68,27 @@ const videos = Array.isArray(fm.videos) ? fm.videos : (fm.videos ? [fm.videos] :
             href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300&display=swap"
             rel="stylesheet"
         />
+        {redirectUrl && <meta http-equiv="refresh" content={`0;url=${redirectUrl}`} />}
+        {redirectUrl && <link rel="canonical" href={redirectUrl} />}
     </head>
-    <article class="post-full">
-        {cover && <img class="cover" src={cover} alt={fm.title} />}
-
-        {externalLink && (
-            <p class="post-source-link">
-                <a href={externalLink} target="_blank" rel="noopener noreferrer">
-                    {externalLink}
-                </a>
+    {redirectUrl ? (
+        <article class="post-full post-full--redirect">
+            <p>
+                Redirecting to{' '}
+                <a href={redirectUrl}>{redirectUrl}</a>.
             </p>
-        )}
-
-        <section class="post-content">
-            <Content />
-        </section>
-    </article>
+            <script is:inline>
+                {`window.location.replace(${JSON.stringify(redirectUrl)});`}
+            </script>
+        </article>
+    ) : (
+        <article class="post-full">
+            {cover && <img class="cover" src={cover} alt={fm.title} />}
+            <section class="post-content">
+                <Content />
+            </section>
+        </article>
+    )}
 </Layout>
 
 <style is:global>

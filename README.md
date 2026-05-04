@@ -44,4 +44,3 @@ Feel free to check [our documentation](https://docs.astro.build) or jump into ou
 
 
 npm run dev for the main site
-cd /compiler, node server.js to up the server
