@@ -245,7 +245,7 @@ function normalizeExportParagraphText(value) {
     .trim();
 }
 
-function stripLeadingMetadataBlock(bodyHtml, { postTitle, postDate, postDateISO, postLink }) {
+function stripLeadingMetadataBlock(bodyHtml, { postLink }) {
   const raw = String(bodyHtml || "");
   const wrapperRe = /^(?<prefix>\s*(?:<style\b[^>]*>[\s\S]*?<\/style>\s*)*<div class="doc-export">)(?<inner>[\s\S]*?)(?<suffix><\/div>\s*)$/i;
   const wrapped = raw.match(wrapperRe);
@@ -255,7 +255,7 @@ function stripLeadingMetadataBlock(bodyHtml, { postTitle, postDate, postDateISO,
   if (!html) return html;
 
   const targets = new Set(
-    [postTitle, postDate, postDateISO, postLink]
+    [postLink]
       .map(v => normalizeExportParagraphText(v))
       .filter(Boolean)
   );
@@ -286,7 +286,7 @@ function stripLeadingMetadataBlock(bodyHtml, { postTitle, postDate, postDateISO,
   return wrapped ? `${prefix}${cleaned}${suffix}`.trim() : cleaned;
 }
 
-function stripKnownMetadataParagraphs(bodyHtml, { postTitle, postDate, postDateISO, postLink }) {
+function stripKnownMetadataParagraphs(bodyHtml, { postLink }) {
   const raw = String(bodyHtml || "");
   const headLimit = 12000;
   const head = raw.slice(0, headLimit);
@@ -296,7 +296,7 @@ function stripKnownMetadataParagraphs(bodyHtml, { postTitle, postDate, postDateI
   if (!matches.length) return raw.trim();
 
   const targets = new Set(
-    [postTitle, postDate, postDateISO, postLink]
+    [postLink]
       .map(v => normalizeExportParagraphText(v))
       .filter(Boolean)
   );
@@ -1281,15 +1281,9 @@ app.post("/compile", async (req, res) => {
     body = stripMetaHeaderLines(body);
     body = stripMatchingMetadataLinkFromBody(body, postLink);
     body = stripLeadingMetadataBlock(body, {
-      postTitle,
-      postDate,
-      postDateISO,
       postLink
     });
     body = stripKnownMetadataParagraphs(body, {
-      postTitle,
-      postDate,
-      postDateISO,
       postLink
     });
     body = sanitizeStyleTagsInHtml(body);
