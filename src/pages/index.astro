@@ -134,7 +134,8 @@ const posts = await Promise.all(
 		if (fm.video && !fmVideos.includes(fm.video))
 			fmVideos.unshift(fm.video);
 		const videos = fmVideos.filter(Boolean);
-		const externalUrl = String(postLinks[id]).trim()
+		const externalUrl =
+			typeof postLinks?.[id] === "string" ? postLinks[id].trim() : "";
 
 		return {
 			id,
@@ -241,7 +242,7 @@ const sortedPosts = allPosts.sort(
     style={`--special-link-color: ${TEXT_COLORS.Thought};`}
     href="/"
     data-post-tag="Thought">Thoughts</a>,
-  longer, self-contained writing<br />
+  longer pieces of writing<br />
 				</div>
 			</div>
 		</section>

@@ -8,6 +8,7 @@ const snippetImage =
 	(Array.isArray(post.images) && post.images[0]) ? post.images[0] : displayImage;
 const uniqueId = instanceKey ? String(instanceKey) : String(post.id);
 const postHref = post.externalUrl || post.pathname;
+const isExternalLink = Boolean(post.externalUrl);
 
 const dataTags = (post.tags || []).join(',');
 
@@ -43,7 +44,13 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 			<h2 class="post-card__title"
 				style={`color: ${color};`}
 			>
-				<a href={postHref}>{post.title}</a>
+				<a
+					href={postHref}
+					target={isExternalLink ? "_blank" : undefined}
+					rel={isExternalLink ? "noopener noreferrer" : undefined}
+				>
+					{post.title}
+				</a>
 			</h2>
 			<div class="tags">
 				{post.tags.map((tag: unknown) => (
