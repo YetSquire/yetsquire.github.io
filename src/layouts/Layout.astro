@@ -189,6 +189,10 @@ const showSocialHeader = isHomePage || isAboutPage;
                 filter: grayscale(100%);
             }
 
+            .home-header + main .hero {
+                padding-top: clamp(3.75rem, 10vw, 5.5rem);
+            }
+
             .sr-only {
                 position: absolute;
                 width: 1px;
@@ -246,6 +250,27 @@ const showSocialHeader = isHomePage || isAboutPage;
                 text-decoration-thickness: 2px;
                 text-underline-offset: 4px;
             }
+
+            @media (max-width: 768px) {
+                .home-header {
+                    top: 0.75rem;
+                    right: 0.75rem;
+                }
+
+                .home-social {
+                    gap: 0.45rem;
+                }
+
+                .social-icon {
+                    width: 2.35rem;
+                    height: 2.35rem;
+                    font-size: 1.15rem;
+                }
+
+                .home-header + main .hero {
+                    padding-top: max(4.75rem, 2rem);
+                }
+            }
         </style>
     </head>
     <body class={isPostsPage ? "post-page" : undefined}>
@@ -300,7 +325,7 @@ const showSocialHeader = isHomePage || isAboutPage;
                             src="/images/about/github.png"
                             alt=""
                             aria-hidden="true"
-                            style={`width: 2rem; height: 2rem`}
+                            style={`width: 2.3rem; height: 2.3rem`}
                         />
                         <span class="sr-only">GitHub</span>
                     </a>
