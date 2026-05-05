@@ -1,6 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import postLinks from '../../content/post_links.json';
+const postLinks = (await import("../../content/post_links.json")).default as Record<string, string>;
 
 const { params } = Astro;
 const slug = params.slug;

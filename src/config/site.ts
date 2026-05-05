@@ -4,5 +4,6 @@ export const TEXT_COLORS = {
     // Post: "#b3ff00ff",
     Project: "#2f97feff",
     Thought: "#19b701ff",
-    Both: "rgb(41, 208, 199)"
+    // Both: "hsl(177, 67%, 49%)"
+    Both: "#19b701ff",
 };

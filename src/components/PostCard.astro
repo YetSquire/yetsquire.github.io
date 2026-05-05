@@ -7,6 +7,7 @@ const displayImage = post.cover;
 const snippetImage =
 	(Array.isArray(post.images) && post.images[0]) ? post.images[0] : displayImage;
 const uniqueId = instanceKey ? String(instanceKey) : String(post.id);
+const postHref = post.externalUrl || post.pathname;
 
 const dataTags = (post.tags || []).join(',');
 
@@ -42,7 +43,7 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 			<h2 class="post-card__title"
 				style={`color: ${color};`}
 			>
-				<a href={post.pathname}>{post.title}</a>
+				<a href={postHref}>{post.title}</a>
 			</h2>
 			<div class="tags">
 				{post.tags.map((tag: unknown) => (

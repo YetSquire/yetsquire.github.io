@@ -229,6 +229,97 @@ function stripMatchingMetadataLinkFromBody(text, postLink) {
   return out.trim();
 }
 
+function decodeBasicHtmlEntities(value) {
+  return String(value || "")
+    .replace(/&nbsp;|&#160;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">");
+}
+
+function normalizeExportParagraphText(value) {
+  return decodeBasicHtmlEntities(String(value || "").replace(/<[^>]*>/g, " "))
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function stripLeadingMetadataBlock(bodyHtml, { postTitle, postDate, postDateISO, postLink }) {
+  const raw = String(bodyHtml || "");
+  const wrapperRe = /^(?<prefix>\s*(?:<style\b[^>]*>[\s\S]*?<\/style>\s*)*<div class="doc-export">)(?<inner>[\s\S]*?)(?<suffix><\/div>\s*)$/i;
+  const wrapped = raw.match(wrapperRe);
+  const prefix = wrapped?.groups?.prefix || "";
+  const suffix = wrapped?.groups?.suffix || "";
+  let html = String(wrapped?.groups?.inner ?? raw).trim();
+  if (!html) return html;
+
+  const targets = new Set(
+    [postTitle, postDate, postDateISO, postLink]
+      .map(v => normalizeExportParagraphText(v))
+      .filter(Boolean)
+  );
+  if (!targets.size) return html;
+
+  const leadingParagraphRe = /^(\s*<p\b[^>]*>[\s\S]*?<\/p>\s*)/i;
+  let removed = 0;
+
+  // Only strip a small leading run so we do not delete real content deeper in the post.
+  while (removed < 6) {
+    const match = html.match(leadingParagraphRe);
+    if (!match) break;
+
+    const paragraphHtml = match[1];
+    const text = normalizeExportParagraphText(paragraphHtml).replace(/^(Title|Date|Tags|Link):\s*/i, "");
+    if (!text) {
+      html = html.slice(paragraphHtml.length).trimStart();
+      removed += 1;
+      continue;
+    }
+    if (!targets.has(text)) break;
+
+    html = html.slice(paragraphHtml.length).trimStart();
+    removed += 1;
+  }
+
+  const cleaned = html.trim();
+  return wrapped ? `${prefix}${cleaned}${suffix}`.trim() : cleaned;
+}
+
+function stripKnownMetadataParagraphs(bodyHtml, { postTitle, postDate, postDateISO, postLink }) {
+  const raw = String(bodyHtml || "");
+  const headLimit = 12000;
+  const head = raw.slice(0, headLimit);
+  const tail = raw.slice(headLimit);
+  const paragraphRe = /<p\b[^>]*>[\s\S]*?<\/p>\s*/gi;
+  const matches = [...head.matchAll(paragraphRe)];
+  if (!matches.length) return raw.trim();
+
+  const targets = new Set(
+    [postTitle, postDate, postDateISO, postLink]
+      .map(v => normalizeExportParagraphText(v))
+      .filter(Boolean)
+  );
+  if (!targets.size) return raw.trim();
+
+  const removalRanges = [];
+  for (const match of matches.slice(0, 8)) {
+    const text = normalizeExportParagraphText(match[0]).replace(/^(Title|Date|Tags|Link):\s*/i, "");
+    if (!targets.has(text)) continue;
+    removalRanges.push([match.index, match.index + match[0].length]);
+  }
+  if (!removalRanges.length) return raw.trim();
+
+  let out = "";
+  let cursor = 0;
+  for (const [start, end] of removalRanges) {
+    out += head.slice(cursor, start);
+    cursor = end;
+  }
+  out += head.slice(cursor);
+  return `${out}${tail}`.trim();
+}
+
 function yamlList(items, indent = "  ") {
   const list = Array.isArray(items) ? items : [];
   if (list.length === 0) return `${indent}[]`;
@@ -1189,6 +1280,18 @@ app.post("/compile", async (req, res) => {
     body = stripMetaHeaderFromExportHtml(body);
     body = stripMetaHeaderLines(body);
     body = stripMatchingMetadataLinkFromBody(body, postLink);
+    body = stripLeadingMetadataBlock(body, {
+      postTitle,
+      postDate,
+      postDateISO,
+      postLink
+    });
+    body = stripKnownMetadataParagraphs(body, {
+      postTitle,
+      postDate,
+      postDateISO,
+      postLink
+    });
     body = sanitizeStyleTagsInHtml(body);
 
     const frontmatter = [
