@@ -189,10 +189,6 @@ const showSocialHeader = isHomePage || isAboutPage;
                 filter: grayscale(100%);
             }
 
-            .home-header + main .hero {
-                padding-top: clamp(3.75rem, 10vw, 5.5rem);
-            }
-
             .sr-only {
                 position: absolute;
                 width: 1px;
@@ -252,6 +248,10 @@ const showSocialHeader = isHomePage || isAboutPage;
             }
 
             @media (max-width: 768px) {
+                .home-header + main .hero {
+                    padding-top: clamp(3.75rem, 10vw, 5.5rem);
+                }
+                
                 .home-header {
                     top: 0.75rem;
                     right: 0.75rem;

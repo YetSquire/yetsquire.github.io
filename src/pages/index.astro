@@ -1,6 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { TEXT_COLORS } from "../config/site";
+import { TEXT_COLORS } from "../../site";
 import PostCard from "../components/PostCard.astro";
 import initPostsCode from "../scripts/init_posts.js?raw";
 const postLinks = (await import("../content/post_links.json")).default as Record<string, string>;
@@ -209,26 +209,43 @@ const sortedPosts = allPosts.sort(
 						My name is 
 						<a
 							href="/post/about-me">Andy</a
-						>. I'm an extended reality developer and history nerd. I
-						graduated from the University of Michigan combining
-						those interests by building systems that will shake the
-						world.
-						<br /><br />
+						>. I'm an extended reality developer and history nerd.
 						I've recreated a
-						<a href="/post/the-big-city-lost-and-found-in-vr">lost film</a>
+						<a href="https://artsengine.engin.umich.edu/feast/big-city/"
+							target="_blank"
+							rel="noopener"
+							aria-label="Resume">lost film</a>
 						in VR, developed
-						<a href="/post/smart-glasses-for-the-age-of-ai"
+						<a href="https://www.trymira.com/"
+							target="_blank"
+							rel="noopener"
+							aria-label="Resume"
 							>smart glasses</a
 						>
 						that remember everything, and built a neurotech
 						<a href="/post/the-orbit-suite"
 							>superhero simulator</a
-						>. Today, I'm defining the future with the
-						Palantir Mixed Reality team.
+						>. 
+						<!-- Today, I'm defining the future with the
+						Palantir Mixed Reality team. -->
 
 						<br /><br />
-
-  This website has two entry types:<br />
+						If you just need fast information about me, go to my 
+						<a href="/andy-yao-resume.pdf"
+							target="_blank"
+							rel="noopener"
+							aria-label="Resume"
+							>Resume</a
+						> 
+						or my 
+						<a href="https://www.linkedin.com/in/andy-yao-cs"
+							target="_blank"
+							rel="noopener"
+							aria-label="Resume"
+							>LinkedIn</a
+						>. 
+						This website is intended to provide context for my experiences and my thinking. <br />
+						As such, it has two entry types:<br />
 
   - <a
     class="special-link"
@@ -385,7 +402,7 @@ const sortedPosts = allPosts.sort(
 
 	.hero-image {
 		width: 320px;
-		height: 450px;
+		height: 400px;
 		border-radius: 8px;
 		background-image: url("/images/babel.jpg");
 		background-size: cover;
