@@ -75,21 +75,35 @@ function scrubDocExportMetaHtml(html) {
 }
 
 function readYamlFrontmatter(text) {
-  const m = String(text || "").match(/^---\s*\n([\s\S]*?)\n---\s*\n/);
+  const m = String(text || "").match(/^---\s*\n([\s\S]*?)\n---\s*\n?/);
   if (!m) return {};
+  const lines = m[1].split(/\r?\n/);
   const fm = {};
-  for (const line of m[1].split("\n")) {
-    const idx = line.indexOf(":");
-    if (idx === -1) continue;
-    const key = line.slice(0, idx).trim();
-    const raw = line.slice(idx + 1).trim();
-    const value = raw.replace(/^"(.*)"$/, "$1");
-    if (key) fm[key] = value;
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    const keyMatch = line.match(/^([A-Za-z0-9_]+):\s*(.*)$/);
+    if (!keyMatch) continue;
+    const key = keyMatch[1];
+    const raw = keyMatch[2].trim();
+    if (raw) {
+      fm[key] = raw.replace(/^"(.*)"$/, "$1");
+      continue;
+    }
+
+    const items = [];
+    let j = i + 1;
+    for (; j < lines.length; j += 1) {
+      const itemMatch = lines[j].match(/^\s*-\s*(.*)$/);
+      if (!itemMatch) break;
+      items.push(itemMatch[1].trim().replace(/^"(.*)"$/, "$1"));
+    }
+    fm[key] = items;
+    i = j - 1;
   }
   return fm;
 }
 
-function walkMarkdownFiles(dir) {
+function walkFiles(dir) {
   const out = [];
   if (!fs.existsSync(dir)) return out;
   const stack = [dir];
@@ -99,18 +113,29 @@ function walkMarkdownFiles(dir) {
     for (const ent of entries) {
       const full = path.join(current, ent.name);
       if (ent.isDirectory()) stack.push(full);
-      else if (ent.isFile() && (ent.name.endsWith(".md") || ent.name.endsWith(".mdx"))) out.push(full);
+      else if (ent.isFile()) out.push(full);
     }
   }
   return out;
 }
 
+function readPostMetadataFromFile(filePath) {
+  if (filePath.endsWith(".json")) {
+    return readJsonFile(filePath, {});
+  }
+  if (filePath.endsWith(".md") || filePath.endsWith(".mdx")) {
+    const text = fs.readFileSync(filePath, "utf8");
+    return readYamlFrontmatter(text);
+  }
+  return {};
+}
+
 function slugIsTakenByOtherSource(postsDir, slug, sourceTabId) {
   if (!slug) return false;
-  for (const filePath of walkMarkdownFiles(postsDir)) {
-    const text = fs.readFileSync(filePath, "utf8");
-    const fm = readYamlFrontmatter(text);
-    const existingId = fm.id || path.basename(filePath).replace(/\.(md|mdx)$/, "");
+  for (const filePath of walkFiles(postsDir)) {
+    if (!/\.(json|md|mdx)$/i.test(filePath)) continue;
+    const fm = readPostMetadataFromFile(filePath);
+    const existingId = fm.id || path.basename(filePath).replace(/\.(json|md|mdx)$/, "");
     const existingSourceTabId = fm.sourceTabId || "";
     if (existingId === slug && String(existingSourceTabId) !== String(sourceTabId)) return true;
   }
@@ -1277,37 +1302,26 @@ app.post("/compile", async (req, res) => {
     }
 
     body = scrubDocExportMetaHtml(body);
-    body = stripMetaHeaderFromExportHtml(body);
-    body = stripMetaHeaderLines(body);
     body = stripMatchingMetadataLinkFromBody(body, postLink);
-    body = stripLeadingMetadataBlock(body, {
-      postLink
-    });
-    body = stripKnownMetadataParagraphs(body, {
-      postLink
-    });
-    body = sanitizeStyleTagsInHtml(body);
+    body = sanitizeStyleTagsInHtml(body).trim();
 
-    const frontmatter = [
-      "---",
-      `id: "${postId}"`,
-      `pathname: "${pathname}"`,
-      `sourceDocId: "${docId}"`,
-      `sourceTabId: "${tabId}"`,
-      `title: "${postTitle.replace(/\"/g, '\\"')}"`,
-      `date: "${postDateISO}"`,
-      "tags:",
-      yamlList(postTags, "  "),
-      ...(cover ? [`cover: ${cover}`] : []),
-      ...(rendered.images.length ? ["images:", yamlList(rendered.images, "  ")] : []),
-      "---"
-    ].join("\n");
+    const postMeta = {
+      id: postId,
+      pathname,
+      sourceDocId: String(docId),
+      sourceTabId: String(tabId),
+      title: postTitle,
+      date: postDateISO,
+      tags: postTags,
+      ...(cover ? { cover } : {}),
+      ...(rendered.images.length ? { images: rendered.images } : {})
+    };
 
-    const postMarkdown = `${frontmatter}\n\n${body}\n`;
-
-    const outPath = path.join(outDir, `${postId}.md`);
+    const htmlPath = path.join(outDir, `${postId}.html`);
+    const metaPath = path.join(outDir, `${postId}.json`);
     fs.mkdirSync(outDir, { recursive: true });
-    fs.writeFileSync(outPath, postMarkdown, "utf8");
+    fs.writeFileSync(htmlPath, `${body}\n`, "utf8");
+    fs.writeFileSync(metaPath, `${JSON.stringify(postMeta, null, 2)}\n`, "utf8");
 
     // Persist external link outside markdown frontmatter.
     // This keeps URLs out of post files while still allowing /post/[id] redirects.
@@ -1323,7 +1337,8 @@ app.post("/compile", async (req, res) => {
       message: `Wrote post ${postId}`,
       postId,
       pathname,
-      outPath,
+      outPath: htmlPath,
+      metaPath,
       postTitle,
       postDate,
       postDateISO,
@@ -1334,7 +1349,7 @@ app.post("/compile", async (req, res) => {
       images: rendered.images,
       warnings,
       body,
-      postMarkdown,
+      // postMarkdown,
       ...(debug ? { debug: { renderMode, exportedDebug, ...(rendered.debug || {}) } } : {})
     });
 

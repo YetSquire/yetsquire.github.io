@@ -1,156 +1,77 @@
 ---
-import Layout from '../../layouts/Layout.astro';
+import Layout from "../../layouts/Layout.astro";
+import { loadGeneratedPosts } from "../../lib/posts";
+
 const postLinks = (await import("../../content/post_links.json")).default as Record<string, string>;
+const slug = String(Astro.params.slug || "");
+const allPosts = loadGeneratedPosts(postLinks);
+const post = Astro.props.post || allPosts.find((entry) => entry.id === slug);
 
-const { params } = Astro;
-const slug = params.slug;
-
-// load all markdown posts
-const modules = import.meta.glob('../../content/posts/**/*.md', { eager: true }) as Record<string, any>;
-
-// find module by frontmatter id or filename
-let mod = null;
-for (const [path, m] of Object.entries(modules)) {
-    const fm = m.frontmatter || {};
-    const parts = path.split('/');
-    const filename = parts[parts.length - 1].replace(/\.md$/, '');
-    if (fm.id === slug || filename === slug) {
-        mod = m;
-        break;
-    }
+if (!post) {
+	throw new Error(`Post not found: ${slug}`);
 }
 
-if (!mod) {
-    throw new Error(`Post not found: ${slug}`);
-}
-
-const fm = mod.frontmatter || {};
-const redirectKey =
-    typeof fm.id === 'string' && fm.id.trim()
-        ? fm.id.trim()
-        : slug;
-const redirectUrl =
-    (postLinks && typeof postLinks === 'object' && typeof postLinks[redirectKey] === 'string')
-        ? String(postLinks[redirectKey]).trim()
-        : "";
-const Content = mod.default;
-const assetId = fm.id || slug;
+const redirectUrl = post.externalUrl;
 
 export async function getStaticPaths() {
-    const modules = import.meta.glob('../../content/posts/**/*.md', { eager: true }) as Record<string, any>;
-    const paths = Object.entries(modules).map(([path, mod]) => {
-        const fm = mod.frontmatter || {};
-        const parts = path.split('/');
-        const filename = parts[parts.length - 1].replace(/\.md$/, '');
-        const postSlug = fm.id || filename;
-        return { params: { slug: postSlug } };
-    });
-    return paths;
+	const postLinks = (await import("../../content/post_links.json")).default as Record<string, string>;
+	const posts = loadGeneratedPosts(postLinks);
+return posts.map((post) => ({
+		params: { slug: post.id },
+		props: { post },
+	}));
 }
-
-// Helper to route image paths same as posts listing
-const routeImagePath = (imagePath: string): string => {
-    if (!imagePath) return '';
-    if (imagePath.startsWith('/') || imagePath.startsWith('http')) return imagePath;
-    return `/images/posts/${assetId}/${imagePath}`;
-};
-
-const cover = fm.cover || fm.image ? (routeImagePath(fm.cover || fm.image)) : '';
-const images = (Array.isArray(fm.images) ? fm.images : (fm.images ? [fm.images] : [])).map((i: string) => routeImagePath(i));
-const videos = Array.isArray(fm.videos) ? fm.videos : (fm.videos ? [fm.videos] : []);
 ---
 
-<Layout title={fm.title || slug}>
-    <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300&display=swap"
-            rel="stylesheet"
-        />
-        {redirectUrl && <meta http-equiv="refresh" content={`0;url=${redirectUrl}`} />}
-        {redirectUrl && <link rel="canonical" href={redirectUrl} />}
-    </head>
-    {redirectUrl ? (
-        <article class="post-full post-full--redirect">
-            <p>
-                Redirecting to{' '}
-                <a href={redirectUrl}>{redirectUrl}</a>.
-            </p>
-            <script is:inline>
-                {`window.location.replace(${JSON.stringify(redirectUrl)});`}
-            </script>
-        </article>
-    ) : (
-        <article class="post-full">
-            {cover && <img class="cover" src={cover} alt={fm.title} />}
-            <section class="post-content">
-                <Content />
-            </section>
-        </article>
-    )}
+<Layout title={post.title || slug}>
+	<head>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300&display=swap"
+			rel="stylesheet"
+		/>
+		{redirectUrl && <meta http-equiv="refresh" content={`0;url=${redirectUrl}`} />}
+		{redirectUrl && <link rel="canonical" href={redirectUrl} />}
+	</head>
+	{redirectUrl ? (
+		<article class="post-full post-full--redirect">
+			<p>
+				Redirecting to{" "}
+				<a href={redirectUrl}>{redirectUrl}</a>.
+			</p>
+			<script is:inline>
+				{`window.location.replace(${JSON.stringify(redirectUrl)});`}
+			</script>
+		</article>
+	) : (
+		<article class="post-full">
+			{post.cover && <img class="cover" src={post.cover} alt={post.title} />}
+			<section class="post-content" set:html={post.html} />
+		</article>
+	)}
 </Layout>
 
 <style is:global>
-    .post-content {
-        font-family:
-            "Merriweather",
-            -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-            "Helvetica Neue", Arial, sans-serif;
-        font-size: 11pt;
-        font-weight: 300;
-        line-height: 1.6;
-    }
-
-    .post-content .title,
-    .post-content .doc-export .title {
-        font-family:
-            "Antic",
-            -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-            "Helvetica Neue", Arial, sans-serif;
-        font-size: 26pt;
-        font-weight: 400;
-        line-height: 1.15;
-        color: #000;
-        margin: 0;
-    }
-
-    .post-content .subtitle,
-    .post-content .doc-export .subtitle {
-        font-family:
-            "Merriweather",
-            -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-            "Helvetica Neue", Arial, sans-serif;
-        font-size: 15pt;
-        font-weight: 300;
-        line-height: 1.15;
-        color: #666;
-        margin: 0 0 1rem;
-    }
-
 	.post-full {
 		margin-top: 2rem;
 		opacity: 0;
 		transition: opacity 280ms ease;
 	}
 
-	.post-source-link {
-		margin: 0 0 1rem;
-		font-size: 0.95rem;
-		word-break: break-word;
-	}
-
-	.post-source-link a {
-		color: inherit;
-		text-decoration: underline;
-	}
-
 	html:not(.post-loading) .post-full {
 		opacity: 1;
 	}
 
-	/* The exported document often repeats the metadata URL in-body.
-	   Hide that duplicated link when it matches the frontmatter URL. */
+	.post-content {
+		overflow-wrap: anywhere;
+	}
+
+	.post-content img {
+		max-width: 100%;
+		height: auto;
+	}
+
 	.post-content a[href] {
 		word-break: break-word;
 	}

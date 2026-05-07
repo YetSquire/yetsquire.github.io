@@ -3,94 +3,8 @@ import Layout from "../layouts/Layout.astro";
 import { TEXT_COLORS } from "../../site";
 import PostCard from "../components/PostCard.astro";
 import initPostsCode from "../scripts/init_posts.js?raw";
+import { extractExcerptFromHtml, loadGeneratedPosts } from "../lib/posts";
 const postLinks = (await import("../content/post_links.json")).default as Record<string, string>;
-
-const modules = import.meta.glob("../content/posts/**/*.{md,mdx}", {
-	eager: true,
-}) as Record<string, any>;
-
-const decodeHtmlEntities = (value: string): string => {
-	return String(value || "")
-		.replace(/&nbsp;/g, " ")
-		.replace(/&amp;/g, "&")
-		.replace(/&quot;/g, '"')
-		.replace(/&#39;/g, "'")
-		.replace(/&lt;/g, "<")
-		.replace(/&gt;/g, ">")
-		.replace(/&rsquo;|&lsquo;/g, "'")
-		.replace(/&rdquo;|&ldquo;/g, '"');
-};
-
-const stripHtml = (value: string): string =>
-	String(value || "").replace(/<[^>]*>/g, "");
-
-const normalizeWhitespace = (value: string): string =>
-	String(value || "")
-		.replace(/\s+/g, " ")
-		.trim();
-
-const extractFirstSegment = async (
-	mod: any,
-	title: string,
-): Promise<string> => {
-	let source = "";
-
-	try {
-		if (typeof mod?.compiledContent === "function") {
-			source = await mod.compiledContent();
-		} else if (typeof mod?.rawContent === "function") {
-			source = mod.rawContent();
-		}
-	} catch {
-		// ignore
-	}
-
-	if (!source && typeof mod?.rawContent === "function") {
-		try {
-			source = mod.rawContent();
-		} catch {
-			// ignore
-		}
-	}
-
-	source = String(source || "").replace(/^---[\s\S]*?---\s*/m, "");
-	if (!source) return "";
-
-	// Prefer the first meaningful <p> when content is HTML-exported.
-	const titleLower = String(title || "")
-		.trim()
-		.toLowerCase();
-	const pMatches = Array.from(source.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi));
-	for (const match of pMatches) {
-		const raw = match?.[1] || "";
-		const text = normalizeWhitespace(decodeHtmlEntities(stripHtml(raw)));
-		if (!text) continue;
-		if (titleLower && text.toLowerCase() === titleLower) continue;
-		if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(text)) continue;
-		if (/^\d{4}-\d{2}-\d{2}$/.test(text)) continue;
-		if (text.length < 25 && !/[.!?]/.test(text)) continue;
-		return text;
-	}
-
-	// Markdown fallback: first non-empty paragraph-ish chunk.
-	const cleaned = source
-		.replace(/<style\b[\s\S]*?<\/style>/gi, "")
-		.replace(/```[\s\S]*?```/g, "")
-		.trim();
-
-	const chunks = cleaned
-		.split(/\n\s*\n/)
-		.map((c) => normalizeWhitespace(decodeHtmlEntities(stripHtml(c))))
-		.filter(Boolean);
-
-	for (const chunk of chunks) {
-		if (titleLower && chunk.toLowerCase() === titleLower) continue;
-		if (chunk.length < 25 && !/[.!?]/.test(chunk)) continue;
-		return chunk;
-	}
-
-	return "";
-};
 
 const parseDateOnlyAsLocalDate = (value: string): Date => {
 	const m = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -98,60 +12,10 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 	return new Date(value);
 };
 
-const posts = await Promise.all(
-	Object.entries(modules).map(async ([path, mod]) => {
-		const fm = mod.frontmatter || {};
-		const pathEnd = path.split("/");
-		const id =
-			fm.id || pathEnd[pathEnd.length - 1].replace(/\.(md|mdx)$/, "");
-
-		const routeImagePath = (imagePath: string): string => {
-			if (!imagePath) return "";
-			if (imagePath.startsWith("/") || imagePath.startsWith("http"))
-				return imagePath;
-			return `/images/posts/${id}/${imagePath}`;
-		};
-
-		const coverSource = fm.cover || fm.image || "";
-		const cover = coverSource ? routeImagePath(coverSource) : "";
-
-		const fmImages = Array.isArray(fm.images)
-			? fm.images.slice()
-			: fm.images
-				? [fm.images]
-				: [];
-		if (fm.image && !fmImages.includes(fm.image))
-			fmImages.unshift(fm.image);
-		const images = fmImages
-			.map((img: string) => routeImagePath(img))
-			.filter(Boolean);
-
-		const fmVideos = Array.isArray(fm.videos)
-			? fm.videos.slice()
-			: fm.videos
-				? [fm.videos]
-				: [];
-		if (fm.video && !fmVideos.includes(fm.video))
-			fmVideos.unshift(fm.video);
-		const videos = fmVideos.filter(Boolean);
-		const externalUrl =
-			typeof postLinks?.[id] === "string" ? postLinks[id].trim() : "";
-
-		return {
-			id,
-			title: fm.title || id,
-			description: fm.description || "",
-			excerpt: await extractFirstSegment(mod, fm.title || id),
-			date: fm.date || "1970-01-01",
-			tags: fm.tags || [],
-			cover,
-			images,
-			videos,
-			externalUrl,
-			pathname: `/post/${id}`,
-		};
-	}),
-);
+const posts = loadGeneratedPosts(postLinks).map((post) => ({
+	...post,
+	excerpt: extractExcerptFromHtml(post.html, post.title),
+}));
 
 const manualPosts = [
 	{

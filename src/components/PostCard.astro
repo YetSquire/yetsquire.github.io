@@ -82,11 +82,11 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 </article>
 
 <script>
-	function isModifiedEvent(event) {
+	function isModifiedEvent(event: { metaKey: any; ctrlKey: any; shiftKey: any; altKey: any; }) {
 		return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
 	}
 
-	function navigateCard(card, event) {
+	function navigateCard(card: HTMLElement, event: PointerEvent | KeyboardEvent) {
 		const href = card.dataset.href;
 		if (!href) return;
 
