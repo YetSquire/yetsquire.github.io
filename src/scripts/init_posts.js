@@ -1,7 +1,6 @@
 let api = null;
 let apiRootEl = null;
 const hookedJumpLinks = new WeakSet();
-let cardClickBound = false;
 const HOME_TAGS_COOKIE = "home_tags";
 const HOME_SCROLL_COOKIE = "home_scroll";
 const HOME_EXPAND_COOKIE = "home_expand";
@@ -261,20 +260,6 @@ function bootHomePosts() {
 			smoothScrollToElement(postsSection, 850);
 		});
 	});
-
-	if (!cardClickBound) {
-		cardClickBound = true;
-		document.addEventListener("click", (event) => {
-			const target = event.target;
-			if (!(target instanceof Element)) return;
-			if (target.closest("a, button, input, textarea, select, label")) return;
-			const card = target.closest(".post-card");
-			if (!card) return;
-			const checkbox = card.querySelector(".snippet-toggle");
-			if (!checkbox) return;
-			checkbox.checked = !checkbox.checked;
-		});
-	}
 
 	if (isHome) {
 		let scrollTimer = null;
