@@ -49,29 +49,18 @@ function slugFromTitle(title) {
 
 function scrubDocExportMetaHtml(html) {
   const raw = String(html || "");
-  const headLimit = 12000;
-  let head = raw.slice(0, headLimit);
-  const tail = raw.slice(headLimit);
+  let out = raw;
 
   const replaceFirst = (re, replacement) => {
-    head = head.replace(re, replacement);
+    out = out.replace(re, replacement);
   };
 
   // Clean the metadata emitted by Docs export near the top of the document:
-  // - Remove "Title: " (first occurrence)
-  // - Remove "Date: " (first occurrence)
-  // - Remove the tags section entirely
-  // - Remove the optional link line entirely
   replaceFirst(/Title:\s*/i, "");
   replaceFirst(/Date:\s*/i, "");
-  replaceFirst(/Link:\s*/i, "");
-
-  // Tags can appear as a single line or a "Tags:" paragraph followed by a list.
-  // Ensure we only remove a single <p> block (do not span across multiple paragraphs).
+  replaceFirst(/<p\b[^>]*>(?:(?!<\/p>)[\s\S])*?\bLink:\s*(?:(?!<\/p>)[\s\S])*?<\/p>\s*/i, "");
   replaceFirst(/<p\b[^>]*>(?:(?!<\/p>)[\s\S])*?\bTags:\s*(?:(?!<\/p>)[\s\S])*?<\/p>\s*/i, "");
-  replaceFirst(/<p\b[^>]*>(?:(?!<\/p>)[\s\S])*?\bTags:\s*<\/p>\s*(<(ul|ol)\b[\s\S]*?<\/\2>\s*)/i, "");
-
-  return head + tail;
+  return out;
 }
 
 function readYamlFrontmatter(text) {
@@ -268,6 +257,32 @@ function normalizeExportParagraphText(value) {
   return decodeBasicHtmlEntities(String(value || "").replace(/<[^>]*>/g, " "))
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function stripLeadingEmptyExportBlocks(html) {
+  let out = String(html || "").trimStart();
+  const patterns = [
+    /^\s*<div>\s*<p\b[^>]*>[\s\S]*?<\/p>\s*<\/div>\s*/i,
+    /^\s*<p\b[^>]*>[\s\S]*?<\/p>\s*/i,
+  ];
+
+  let removed = 0;
+  while (removed < 8) {
+    let changed = false;
+    for (const pattern of patterns) {
+      const match = out.match(pattern);
+      if (!match) continue;
+      const text = normalizeExportParagraphText(match[0]);
+      if (text) continue;
+      out = out.slice(match[0].length).trimStart();
+      removed += 1;
+      changed = true;
+      break;
+    }
+    if (!changed) break;
+  }
+
+  return out.trim();
 }
 
 function stripLeadingMetadataBlock(bodyHtml, { postLink }) {
@@ -1303,6 +1318,7 @@ app.post("/compile", async (req, res) => {
 
     body = scrubDocExportMetaHtml(body);
     body = stripMatchingMetadataLinkFromBody(body, postLink);
+    body = stripLeadingEmptyExportBlocks(body);
     body = sanitizeStyleTagsInHtml(body).trim();
 
     const postMeta = {

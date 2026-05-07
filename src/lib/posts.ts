@@ -38,8 +38,8 @@ const normalizeWhitespace = (value: string): string =>
 		.replace(/\s+/g, " ")
 		.trim();
 
-const stripQuotes = (value: string): string =>
-	String(value || "").replace(/^"(.*)"$/, "$1");
+const normalizeExportParagraphText = (value: string): string =>
+	normalizeWhitespace(decodeHtmlEntities(String(value || "").replace(/<[^>]*>/g, " ")));
 
 const walkFiles = (dir: string): string[] => {
 	if (!fs.existsSync(dir)) return [];
@@ -57,41 +57,6 @@ const walkFiles = (dir: string): string[] => {
 	return out;
 };
 
-const parseFrontmatter = (
-	text: string,
-): { data: Record<string, unknown>; body: string } => {
-	const match = String(text || "").match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
-	if (!match) return { data: {}, body: String(text || "") };
-
-	const lines = match[1].split(/\r?\n/);
-	const data: Record<string, unknown> = {};
-
-	for (let i = 0; i < lines.length; i += 1) {
-		const line = lines[i];
-		const keyMatch = line.match(/^([A-Za-z0-9_]+):\s*(.*)$/);
-		if (!keyMatch) continue;
-
-		const key = keyMatch[1];
-		const rawValue = keyMatch[2];
-		if (rawValue) {
-			data[key] = stripQuotes(rawValue.trim());
-			continue;
-		}
-
-		const items: string[] = [];
-		let j = i + 1;
-		for (; j < lines.length; j += 1) {
-			const itemMatch = lines[j].match(/^\s*-\s*(.*)$/);
-			if (!itemMatch) break;
-			items.push(stripQuotes(itemMatch[1].trim()));
-		}
-		data[key] = items;
-		i = j - 1;
-	}
-
-	return { data, body: match[2] || "" };
-};
-
 const routeImagePath = (postId: string, imagePath: string): string => {
 	if (!imagePath) return "";
 	if (imagePath.startsWith("/") || imagePath.startsWith("http")) return imagePath;
@@ -100,21 +65,45 @@ const routeImagePath = (postId: string, imagePath: string): string => {
 
 const scrubDocExportMetaHtml = (html: string): string => {
 	const raw = String(html || "");
-	const headLimit = 12000;
-	let head = raw.slice(0, headLimit);
-	const tail = raw.slice(headLimit);
+	let out = raw;
 
 	const replaceFirst = (pattern: RegExp, replacement: string) => {
-		head = head.replace(pattern, replacement);
+		out = out.replace(pattern, replacement);
 	};
 
-	replaceFirst(/Title:\s*/i, "");
-	replaceFirst(/Date:\s*/i, "");
-	replaceFirst(/Link:\s*/i, "");
+	replaceFirst(/<p\b[^>]*>(?:(?!<\/p>)[\s\S])*?\bTitle:\s*(?:(?!<\/p>)[\s\S])*?<\/p>\s*/i, "");
+	replaceFirst(/<p\b[^>]*>(?:(?!<\/p>)[\s\S])*?\bDate:\s*(?:(?!<\/p>)[\s\S])*?<\/p>\s*/i, "");
+	replaceFirst(/<p\b[^>]*>(?:(?!<\/p>)[\s\S])*?\bLink:\s*(?:(?!<\/p>)[\s\S])*?<\/p>\s*/i, "");
 	replaceFirst(/<p\b[^>]*>(?:(?!<\/p>)[\s\S])*?\bTags:\s*(?:(?!<\/p>)[\s\S])*?<\/p>\s*/i, "");
 	replaceFirst(/<p\b[^>]*>(?:(?!<\/p>)[\s\S])*?\bTags:\s*<\/p>\s*(<(ul|ol)\b[\s\S]*?<\/\2>\s*)/i, "");
 
-	return head + tail;
+	return out;
+};
+
+const stripLeadingEmptyExportBlocks = (html: string): string => {
+	let out = String(html || "").trimStart();
+	const patterns = [
+		/^\s*<div>\s*<p\b[^>]*>[\s\S]*?<\/p>\s*<\/div>\s*/i,
+		/^\s*<p\b[^>]*>[\s\S]*?<\/p>\s*/i,
+	];
+
+	let removed = 0;
+	while (removed < 8) {
+		let changed = false;
+		for (const pattern of patterns) {
+			const match = out.match(pattern);
+			if (!match) continue;
+			const text = normalizeExportParagraphText(match[0]);
+			if (text) continue;
+			out = out.slice(match[0].length).trimStart();
+			removed += 1;
+			changed = true;
+			break;
+		}
+		if (!changed) break;
+	}
+
+	return out.trim();
 };
 
 const stripMatchingMetadataLinkFromBody = (text: string, postLink: string): string => {
@@ -143,7 +132,9 @@ const stripMatchingMetadataLinkFromBody = (text: string, postLink: string): stri
 };
 
 const cleanPostHtml = (html: string, postLink: string): string =>
-	stripMatchingMetadataLinkFromBody(scrubDocExportMetaHtml(String(html || "")), postLink).trim();
+	stripLeadingEmptyExportBlocks(
+		stripMatchingMetadataLinkFromBody(scrubDocExportMetaHtml(String(html || "")), postLink),
+	).trim();
 
 export const extractExcerptFromHtml = (html: string, title: string): string => {
 	const source = String(html || "").replace(/<style\b[\s\S]*?<\/style>/gi, "");
@@ -221,14 +212,6 @@ export const loadGeneratedPosts = (
 		const html = fs.existsSync(htmlPath) ? fs.readFileSync(htmlPath, "utf8") : "";
 		const post = normalizePostRecord(meta, html, postLinks, fallbackId);
 		posts.set(post.id, post);
-	}
-
-	for (const mdPath of files.filter((file) => file.endsWith(".md"))) {
-		const raw = fs.readFileSync(mdPath, "utf8");
-		const { data, body } = parseFrontmatter(raw);
-		const fallbackId = path.basename(mdPath, ".md");
-		const post = normalizePostRecord(data, body, postLinks, fallbackId);
-		if (!posts.has(post.id)) posts.set(post.id, post);
 	}
 
 	return Array.from(posts.values());
