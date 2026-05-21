@@ -64,9 +64,19 @@ async function compileCurrentTab(docId, tabId, tabTitle) {
       console.error("Compiler returned error:", response.status, response.statusText);
       const text = await response.text();
       console.log("Response body:", text);
+
+      let message = `Compile failed (${response.status}): ${response.statusText}`;
+      try {
+        const parsed = JSON.parse(text);
+        const details = [parsed?.error, parsed?.details].filter(Boolean).join(" ");
+        if (details) message = details;
+      } catch {
+        if (text) message = `${message} ${text}`;
+      }
+
       return {
         ok: false,
-        message: `Compile failed (${response.status}): ${response.statusText}`
+        message
       };
     }
 

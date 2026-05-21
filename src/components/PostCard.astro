@@ -1,5 +1,6 @@
 ---
 import { TEXT_COLORS } from "../../site"; 
+const HIDDEN_TAG = "Hidden";
 
 const { post, instanceKey } = Astro.props;
 const defaultExpanded = Boolean(Astro.props.defaultExpanded);
@@ -9,6 +10,7 @@ const snippetImage =
 const uniqueId = instanceKey ? String(instanceKey) : String(post.id);
 const postHref = post.externalUrl || post.pathname;
 const isExternalLink = Boolean(post.externalUrl);
+const visibleTags = (post.tags || []).filter((tag: unknown) => String(tag) !== HIDDEN_TAG);
 
 const dataTags = (post.tags || []).join(',');
 
@@ -61,7 +63,7 @@ const parseDateOnlyAsLocalDate = (value: string): Date => {
 				</a>
 			</h2>
 			<div class="tags">
-				{post.tags.map((tag: unknown) => (
+				{visibleTags.map((tag: unknown) => (
 					<a class="tag" href={`/?tag=${encodeURIComponent(String(tag))}#posts`} data-post-tag={String(tag)}>
 						{tag}
 					</a>

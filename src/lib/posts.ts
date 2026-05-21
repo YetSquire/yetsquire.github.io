@@ -19,16 +19,39 @@ export type LoadedPost = {
 
 const POSTS_DIR = path.resolve(process.cwd(), "src", "content", "posts");
 
+const HTML_ENTITY_MAP: Record<string, string> = {
+	nbsp: " ",
+	amp: "&",
+	quot: '"',
+	apos: "'",
+	lt: "<",
+	gt: ">",
+	rsquo: "'",
+	lsquo: "'",
+	rdquo: '"',
+	ldquo: '"',
+	ndash: "\u2013",
+	mdash: "\u2014",
+	hellip: "\u2026",
+	bull: "\u2022",
+};
+
 const decodeHtmlEntities = (value: string): string =>
-	String(value || "")
-		.replace(/&nbsp;|&#160;/gi, " ")
-		.replace(/&amp;/gi, "&")
-		.replace(/&quot;/gi, '"')
-		.replace(/&#39;|&apos;/gi, "'")
-		.replace(/&lt;/gi, "<")
-		.replace(/&gt;/gi, ">")
-		.replace(/&rsquo;|&lsquo;/gi, "'")
-		.replace(/&rdquo;|&ldquo;/gi, '"');
+	String(value || "").replace(/&(#x?[0-9a-f]+|[a-z][a-z0-9]+);/gi, (match, entity) => {
+		const normalized = String(entity || "").toLowerCase();
+
+		if (normalized.startsWith("#x")) {
+			const codePoint = Number.parseInt(normalized.slice(2), 16);
+			return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : match;
+		}
+
+		if (normalized.startsWith("#")) {
+			const codePoint = Number.parseInt(normalized.slice(1), 10);
+			return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : match;
+		}
+
+		return HTML_ENTITY_MAP[normalized] ?? match;
+	});
 
 const stripHtml = (value: string): string =>
 	String(value || "").replace(/<[^>]*>/g, " ");

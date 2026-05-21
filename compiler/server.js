@@ -461,6 +461,27 @@ function flattenTabs(tabs) {
   return out;
 }
 
+function findTabById(tabs, candidateIds) {
+  const targets = new Set(Array.isArray(candidateIds) ? candidateIds.filter(Boolean) : []);
+  if (targets.size === 0) return null;
+
+  const walk = (tab) => {
+    if (!tab) return null;
+    if (targets.has(tab?.tabProperties?.tabId)) return tab;
+    for (const child of tab?.childTabs || []) {
+      const found = walk(child);
+      if (found) return found;
+    }
+    return null;
+  };
+
+  for (const tab of Array.isArray(tabs) ? tabs : []) {
+    const found = walk(tab);
+    if (found) return found;
+  }
+  return null;
+}
+
 function extractBodyInnerHtml(html) {
   const raw = String(html || "");
   const m = raw.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i);
@@ -1195,7 +1216,7 @@ app.post("/compile", async (req, res) => {
     }
 
     const candidates = tabIdCandidates(tabId);
-    const tab = tabs.find(t => candidates.includes(t?.tabProperties?.tabId));
+    const tab = findTabById(tabs, candidates);
 
     if (!tab) {
       return res.status(404).json({
