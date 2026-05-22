@@ -67,9 +67,25 @@ return posts.map((post) => ({
 		overflow-wrap: anywhere;
 	}
 
+	.post-content p > span[style*="display: inline-block"]:has(> img.doc-image) {
+		display: block !important;
+		width: min(100%, 100vw) !important;
+		max-width: 100% !important;
+		height: auto !important;
+		margin-inline: auto !important;
+	}
+
 	.post-content img {
 		max-width: 100%;
 		height: auto;
+	}
+
+	.post-content img.doc-image[style] {
+		display: block;
+		width: 100% !important;
+		max-width: 100% !important;
+		height: auto !important;
+		margin: 0 !important;
 	}
 
 	.post-content a[href] {

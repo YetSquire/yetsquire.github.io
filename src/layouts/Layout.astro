@@ -88,6 +88,13 @@ const showSocialHeader = isHomePage || isAboutPage;
                 line-height: 1.6;
             }
 
+            @media (max-width: 768px) {
+                body.post-page .post-content {
+                    font-size: clamp(1rem, 0.95rem + 0.4vw, 1.075rem);
+                    line-height: 1.72;
+                }
+            }
+
             button,
             input,
             textarea,
